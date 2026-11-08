@@ -26,13 +26,19 @@ from dataclasses import dataclass
 @dataclass(frozen=True, slots=True)
 class Line:
     text: str
-    style: str = "body"  # "title", "heading" or "body"
+    # "title", "heading" or "body"; "table-head" and "table-row" are table rows whose
+    # tab-separated cells start at ``columns`` (points from the left margin).
+    style: str = "body"
+    columns: tuple[float, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
 class PdfDoc:
     title: str
     pages: tuple[tuple[Line, ...], ...]
+    # Drawn on every page when set; documents without them render as before.
+    header: str | None = None
+    footer: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

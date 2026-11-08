@@ -5,10 +5,11 @@
 import type { Metadata } from "next";
 
 import { DemoAuthGate } from "@/components/DemoAuth";
-import { DemoProgress, TopBar } from "@/components/DemoControls";
+import { DemoProgress, ResetConfirmProvider, TopBar } from "@/components/DemoControls";
 import { DemoStateProvider } from "@/components/DemoState";
 import { EvidenceProvider } from "@/components/Evidence";
 import { Sidebar } from "@/components/Nav";
+import { Waves } from "@/components/Waves";
 
 import "./globals.css";
 
@@ -17,10 +18,10 @@ export const metadata: Metadata = {
   description: "Source-grounded requirements from construction project documents (local prototype).",
 };
 
-// Geist and Instrument Serif (both SIL Open Font Licence) load from Google
-// Fonts at view time; the build never needs the network, and an offline
-// viewer gets the close system fallbacks named in globals.css.
-const FONTS = "https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Instrument+Serif&display=swap";
+// Geist and Geist Mono (SIL Open Font Licence) load from Google Fonts at view
+// time; the build never needs the network, and an offline viewer gets the
+// system fallbacks named in globals.css.
+const FONTS = "https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400;500&display=swap";
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
@@ -31,20 +32,23 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <link rel="stylesheet" href={FONTS} />
       </head>
       <body className="min-h-full">
+        <Waves />
         <DemoStateProvider>
           <DemoAuthGate>
-          <EvidenceProvider>
-            <div className="flex min-h-screen">
-              <Sidebar />
-              <div className="flex min-w-0 flex-1 flex-col">
-                <TopBar />
-                <main className="mx-auto w-full max-w-[1520px] flex-1 px-8 pt-10 pb-16 xl:px-12">
-                  <DemoProgress />
-                  {children}
-                </main>
-              </div>
-            </div>
-          </EvidenceProvider>
+            <EvidenceProvider>
+              <ResetConfirmProvider>
+                <div className="app-shell">
+                  <Sidebar />
+                  <div className="app-main">
+                    <main className="content">
+                      <DemoProgress />
+                      {children}
+                    </main>
+                  </div>
+                  <TopBar />
+                </div>
+              </ResetConfirmProvider>
+            </EvidenceProvider>
           </DemoAuthGate>
         </DemoStateProvider>
       </body>

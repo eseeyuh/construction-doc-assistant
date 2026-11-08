@@ -267,8 +267,9 @@ async def test_chat_cites_retrieved_sources_with_page_and_revision(demo: Any) ->
     )
     assert answer.grounded and not answer.removed_citations
     (cited,) = answer.cited
+    # One chunk of pages 2-4; the notice sentence is on page 3.
     assert (cited.file_name, cited.pages, cited.stated_revision, cited.in_force) == (
-        "IP-01_Inspection_Procedure_RevB.pdf", (1,), "B", True,
+        "IP-01_Inspection_Procedure_RevB.pdf", (2, 3, 4), "B", True,
     )  # fmt: skip
     # Current revisions only by default: the superseded Rev A was not retrieved.
     assert "IP-01_Inspection_Procedure_RevA.pdf" not in {s.file_name for s in answer.retrieved}

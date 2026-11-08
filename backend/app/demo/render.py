@@ -20,8 +20,9 @@ from __future__ import annotations
 import io
 import zipfile
 from datetime import UTC, datetime
+from typing import Any
 
-from app.demo.northbridge_content import Document, DocxDoc, HtmlDoc, PdfDoc, PptxDoc
+from app.demo.northbridge_content import Document, DocxDoc, HtmlDoc, Line, PdfDoc, PptxDoc
 
 _FIXED_TIME = datetime(2026, 1, 1, tzinfo=UTC)
 _ZIP_TIME = (1980, 1, 1, 0, 0, 0)
@@ -57,7 +58,13 @@ def render_pdf(doc: PdfDoc, author: str = _AUTHOR) -> bytes:
     from reportlab.lib.pagesizes import A4
     from reportlab.pdfgen.canvas import Canvas
 
-    fonts = {"title": ("Helvetica-Bold", 16, 22), "heading": ("Helvetica-Bold", 12, 18)}
+    fonts = {
+        "title": ("Helvetica-Bold", 16, 22),
+        "heading": ("Helvetica-Bold", 12, 18),
+        "table-head": ("Helvetica-Bold", 9, 13),
+        "table-row": ("Helvetica", 9, 13),
+    }
+    left, right = 56.0, A4[0] - 56
     buffer = io.BytesIO()
     canvas = Canvas(buffer, pagesize=A4, invariant=1)
     canvas.setAuthor(author)
@@ -66,19 +73,56 @@ def render_pdf(doc: PdfDoc, author: str = _AUTHOR) -> bytes:
         y = 790.0
         for line in page:
             font, size, leading = fonts.get(line.style, ("Helvetica", 10, 14))
-            if line.text:
-                if canvas.stringWidth(line.text, font, size) > A4[0] - 2 * 56:
+            if line.style.startswith("table-"):
+                _table_row(canvas, doc.title, number, line, font, size, y, left, right)
+            elif line.text:
+                if canvas.stringWidth(line.text, font, size) > right - left:
                     raise ValueError(f"{doc.title}: page {number} line is too wide: {line.text!r}")
                 canvas.setFont(font, size)
-                canvas.drawString(56, y, line.text)
+                canvas.drawString(left, y, line.text)
             y -= leading
             if y < 60:
                 raise ValueError(f"{doc.title}: page {number} overflows")
         canvas.setFont("Helvetica", 8)
-        canvas.drawString(56, 30, f"Page {number} of {len(doc.pages)}")
+        if doc.footer is None:
+            canvas.drawString(56, 30, f"Page {number} of {len(doc.pages)}")
+        else:
+            canvas.drawString(left, 30, doc.footer)
+            canvas.drawRightString(right, 30, f"Page {number} of {len(doc.pages)}")
+        if doc.header is not None:
+            canvas.drawString(left, 815, doc.header)
+            canvas.setLineWidth(0.5)
+            canvas.line(left, 809, right, 809)
         canvas.showPage()
     canvas.save()
     return buffer.getvalue()
+
+
+def _table_row(
+    canvas: Any,
+    title: str,
+    number: int,
+    line: Line,
+    font: str,
+    size: int,
+    y: float,
+    left: float,
+    right: float,
+) -> None:
+    """One table row: each tab-separated cell at its column, checked to fit."""
+    cells = line.text.split("	")
+    if len(cells) != len(line.columns):
+        raise ValueError(f"{title}: page {number} row has {len(cells)} cells: {line.text!r}")
+    starts = [left + c for c in line.columns]
+    ends = [s - 8 for s in starts[1:]] + [right]
+    canvas.setFont(font, size)
+    for cell, start, end in zip(cells, starts, ends, strict=True):
+        if canvas.stringWidth(cell, font, size) > end - start:
+            raise ValueError(f"{title}: page {number} table cell is too wide: {cell!r}")
+        canvas.drawString(start, y, cell)
+    if line.style == "table-head":
+        canvas.setLineWidth(0.5)
+        canvas.line(left, y - 4, right, y - 4)
 
 
 def render_docx(doc: DocxDoc) -> bytes:

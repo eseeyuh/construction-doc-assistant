@@ -68,7 +68,7 @@ function PageSkeleton() {
         <span className="skeleton block h-3 w-56" />
       </div>
       <div className="grid gap-5 lg:grid-cols-3">
-        <div className="panel space-y-3 p-6 lg:col-span-2">
+        <div className="panel space-y-3 p-5 lg:col-span-2">
           <span className="skeleton block h-3 w-28" />
           <span className="skeleton block h-5 w-72 max-w-full" />
           <span className="skeleton block h-3 w-96 max-w-full" />
@@ -110,12 +110,12 @@ export function LoadState<T>({ result, children }: { result: Loaded<T>; children
 
 export function ErrorNote({ message }: { message: string }) {
   return (
-    <div role="alert" className="panel mb-6 flex max-w-2xl gap-3.5 border-conflict-line bg-conflict-soft px-5 py-4 text-[14.5px]" data-testid="load-error">
-      <Icon name="alert" size={18} className="mt-0.5 text-conflict" />
+    <div role="alert" className="notice notice-danger max-w-2xl border border-conflict-line text-[14px] leading-5" data-testid="load-error">
+      <Icon name="alert" size={18} className="text-conflict" />
       <div>
-        <p className="font-medium text-conflict">This page could not be loaded.</p>
-        <p className="mt-1 text-ink-soft">{message}</p>
-        <p className="mt-2 text-muted">
+        <p className="font-semibold text-conflict">This page could not be loaded.</p>
+        <p className="mt-1 text-ink">{message}</p>
+        <p className="mt-2 text-ink-soft">
           Check that the demo API is running (docker compose -f infra/demo/compose.yml ps), then reload the page.
         </p>
       </div>

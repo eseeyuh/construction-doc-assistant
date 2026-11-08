@@ -12,18 +12,19 @@ import { loadOverview } from "@/lib/load";
 export default function ProjectsPage() {
   const result = useApi(loadOverview, "projects");
   return (
-    <div className="space-y-8">
-      <header className="animate-fade-up">
+    <>
+      <header className="max-w-[760px] space-y-2 animate-fade-up">
+        <p className="overline">Projects</p>
         <h1 className="page-title">Projects</h1>
-        <p className="page-lede">Each project&apos;s documents, and the requirements they state.</p>
+        <p className="page-lede">Each project&apos;s documents you may read, and the requirements they state.</p>
       </header>
       <LoadState result={result}>
-        {({ projects }) => projects.length === 0 ? <NoProjects /> : (
-          <div className="grid gap-6 lg:grid-cols-2">
-            {projects.map((b) => <ProjectCard key={b.project.id} bundle={b} />)}
+        {({ projects, changes }) => projects.length === 0 ? <NoProjects /> : (
+          <div className="grid gap-6">
+            {projects.map((b) => <ProjectCard key={b.project.id} bundle={b} changes={changes} />)}
           </div>
         )}
       </LoadState>
-    </div>
+    </>
   );
 }

@@ -6,16 +6,17 @@
 project, a resource a document, a version a revision), and the optional
 live analysis of one document's current revision."""
 
+import re
 import uuid
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 from sqlalchemy import func, select
 
 from app.api.demo_auth import ViewerDep, forbid_unless_readable
-from app.api.deps import SessionDep
+from app.api.deps import SessionDep, SettingsDep
 from app.api.schemas.assessment import LiveRequirementRead, LiveRequirementsRead, LiveTokenUsage
 from app.api.v1.assessments import _LIVE_LOCK, LIVE_PROVIDER_LABEL, LiveProviderDep
 from app.db.models import Course, Resource, ResourceVersion, SourceSpan
@@ -26,6 +27,14 @@ from app.extraction.live_preview import (
     BriefTooLongError,
     EmptyBriefError,
     preview_requirements,
+)
+from app.ingestion.storage import (
+    LocalRawObjectStore,
+    RawObjectIntegrityError,
+    RawObjectNotFoundError,
+    RawObjectStore,
+    RawStoreError,
+    RawStoreUnavailableError,
 )
 from app.reasoning.revisions import names_previous, revision_label, supersession_statement
 
@@ -169,6 +178,75 @@ async def get_project_documents(
 @router.get("/documents/{resource_id}")
 async def get_document(session: SessionDep, resource: ReadableDocumentDep) -> DocumentRead:
     return await _read(session, resource)
+
+
+def get_raw_store(settings: SettingsDep) -> RawObjectStore:
+    """The content-addressed raw store holding each revision's exact bytes."""
+    try:
+        return LocalRawObjectStore.from_settings(settings)
+    except RawStoreError:
+        raise HTTPException(status_code=503, detail="raw storage is not configured") from None
+
+
+RawStoreDep = Annotated[RawObjectStore, Depends(get_raw_store)]
+
+_UNSAFE_FILENAME_CHARS = re.compile(r"[^A-Za-z0-9._()\- ]+")
+_EXTENSIONS = {"application/pdf": ".pdf"}
+
+
+def safe_filename(display_name: str, media_type: str) -> str:
+    """A download name made from the stored display name: its last path
+    segment only, restricted to a conservative character set, never empty."""
+    name = display_name.replace("\\", "/").rsplit("/", 1)[-1]
+    name = _UNSAFE_FILENAME_CHARS.sub("_", name).strip(" ._")[:150] or "document"
+    extension = _EXTENSIONS.get(media_type)
+    if extension and not name.lower().endswith(extension):
+        name += extension
+    return name
+
+
+@router.get("/documents/{resource_id}/revisions/{revision_id}/file")
+async def get_revision_file(
+    session: SessionDep,
+    resource: ReadableDocumentDep,  # first: permission before the store is touched
+    revision_id: uuid.UUID,
+    store: RawStoreDep,
+) -> Response:
+    """The exact stored bytes of one revision of a readable document. The
+    revision must belong to the document; the bytes come from the
+    content-addressed store by the revision's own reference (never a path from
+    the request) and are checked against their hash before they are sent."""
+    version = await session.get(ResourceVersion, revision_id)
+    if version is None or version.resource_id != resource.id:
+        raise HTTPException(status_code=404, detail="revision not found")
+    try:
+        content = store.open(version.raw_object_ref)
+    except RawObjectNotFoundError:
+        raise HTTPException(
+            status_code=404, detail="the stored file for this revision is missing"
+        ) from None
+    except RawObjectIntegrityError:
+        raise HTTPException(
+            status_code=500, detail="the stored file for this revision failed its integrity check"
+        ) from None
+    except RawStoreUnavailableError:
+        raise HTTPException(status_code=503, detail="raw storage is unavailable") from None
+    except RawStoreError:  # e.g. a malformed stored reference
+        raise HTTPException(
+            status_code=500, detail="the stored file for this revision cannot be read"
+        ) from None
+    media_type = str(version.media_type)
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="{safe_filename(version.display_name, media_type)}"'
+            ),
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 @router.post("/documents/{resource_id}/live-requirements")

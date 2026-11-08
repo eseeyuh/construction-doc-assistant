@@ -205,10 +205,11 @@ async def test_hits_cite_file_page_revision_and_the_stored_quote(
     assert top["document_title"] == "Site Safety Rules SSR-01"
     assert top["revision"]["file_name"] == "SSR-01_Site_Safety_Rules.pdf"
     assert top["revision"]["stated_revision"] is None  # the document states no revision code
-    assert top["pages"] == [1]
-    (citation,) = top["citations"]
-    assert citation["page_number"] == 1
-    assert content.PPE in _flat(citation["quote"])
+    # One chunk packs the short pages 1 and 2; each citation keeps its own page.
+    assert top["pages"] == [1, 2]
+    assert [c["page_number"] for c in top["citations"]] == [1, 2]
+    (citation,) = [c for c in top["citations"] if content.PPE in _flat(c["quote"])]
+    assert citation["page_number"] == 2
     assert citation["quote"] in top["excerpt"] or top["excerpt"] in citation["quote"]
 
     notice = (

@@ -13,8 +13,10 @@
 #   must_not_return  files that must not appear in the top 10 (invariants:
 #                    the superseded Revision A in current-only search)
 #
-# The corpus is tiny: four one-page PDFs, and the PDF parser makes one span
-# (and here one chunk) per page, so each revision is a single retrieval unit.
+# The corpus is tiny: four synthetic PDFs of three or four pages, and the PDF
+# parser makes one span (and here one chunk) per page, so each page is a
+# single retrieval unit. Pages hold the requirement sentences among
+# descriptive context (document control, definitions, informational tables).
 # Scores on it are a regression check of the pipeline, not evidence of
 # retrieval quality.
 dataset: construction-retrieval
@@ -25,74 +27,74 @@ cases:
     query: How much notice must the Contractor give before an inspection?
     revisions: current
     expected:
-      - {file: IP-01_Inspection_Procedure_RevB.pdf, page: 1, passage: "72 hours' notice of each inspection"}
+      - {file: IP-01_Inspection_Procedure_RevB.pdf, page: 3, passage: "72 hours' notice of each inspection"}
     must_not_return: [IP-01_Inspection_Procedure_RevA.pdf]
   - id: notice-history
     query: 48 hours notice of an inspection
     revisions: all
     expected:
-      - {file: IP-01_Inspection_Procedure_RevA.pdf, page: 1, passage: "48 hours' notice of each inspection"}
+      - {file: IP-01_Inspection_Procedure_RevA.pdf, page: 3, passage: "48 hours' notice of each inspection"}
   - id: notice-current-old-figure
     query: 48 hours notice of an inspection
     revisions: current
     expected:
-      - {file: IP-01_Inspection_Procedure_RevB.pdf, page: 1, passage: "72 hours' notice of each inspection"}
+      - {file: IP-01_Inspection_Procedure_RevB.pdf, page: 3, passage: "72 hours' notice of each inspection"}
     must_not_return: [IP-01_Inspection_Procedure_RevA.pdf]
   - id: revision-note
     query: What changed in the notice period?
     revisions: current
     expected:
-      - {file: IP-01_Inspection_Procedure_RevB.pdf, page: 1, passage: "changed from 48 hours to 72 hours"}
+      - {file: IP-01_Inspection_Procedure_RevB.pdf, page: 4, passage: "changed from 48 hours to 72 hours"}
     must_not_return: [IP-01_Inspection_Procedure_RevA.pdf]
   - id: covering-work
     query: Can work be covered up before it has been inspected?
     revisions: current
     expected:
-      - {file: IP-01_Inspection_Procedure_RevB.pdf, page: 1, passage: "must not be covered until the inspection has taken place"}
+      - {file: IP-01_Inspection_Procedure_RevB.pdf, page: 3, passage: "must not be covered until the inspection has taken place"}
     must_not_return: [IP-01_Inspection_Procedure_RevA.pdf]
   - id: inspection-record
     query: Who signs the inspection record?
     revisions: current
     expected:
-      - {file: IP-01_Inspection_Procedure_RevB.pdf, page: 1, passage: "The Site Manager must sign the inspection record"}
+      - {file: IP-01_Inspection_Procedure_RevB.pdf, page: 4, passage: "The Site Manager must sign the inspection record"}
     must_not_return: [IP-01_Inspection_Procedure_RevA.pdf]
   - id: ppe
     query: What protective equipment is required in the work area?
     revisions: current
     expected:
-      - {file: SSR-01_Site_Safety_Rules.pdf, page: 1, passage: "Safety helmets and safety footwear are required"}
+      - {file: SSR-01_Site_Safety_Rules.pdf, page: 2, passage: "Safety helmets and safety footwear are required"}
   - id: ppe-paraphrase
     query: hard hats and boots
     revisions: current
     expected:
-      - {file: SSR-01_Site_Safety_Rules.pdf, page: 1, passage: "Safety helmets and safety footwear are required"}
+      - {file: SSR-01_Site_Safety_Rules.pdf, page: 2, passage: "Safety helmets and safety footwear are required"}
   - id: hi-vis
     query: Is a high-visibility vest needed near moving plant?
     revisions: current
     expected:
-      - {file: SSR-01_Site_Safety_Rules.pdf, page: 1, passage: "High-visibility vests should be worn near moving plant"}
+      - {file: SSR-01_Site_Safety_Rules.pdf, page: 2, passage: "High-visibility vests should be worn near moving plant"}
   - id: visitors
     query: Where do visitors sign in?
     revisions: current
     expected:
-      - {file: SSR-01_Site_Safety_Rules.pdf, page: 1, passage: "All visitors must sign in at the site office"}
+      - {file: SSR-01_Site_Safety_Rules.pdf, page: 3, passage: "All visitors must sign in at the site office"}
   - id: induction-paraphrase
     query: induction for new workers
     revisions: current
     expected:
-      - {file: SSR-01_Site_Safety_Rules.pdf, page: 1, passage: "brief each new operative on these rules"}
+      - {file: SSR-01_Site_Safety_Rules.pdf, page: 3, passage: "brief each new operative on these rules"}
   - id: application-1
     query: When is payment application 1 due?
     revisions: current
     expected:
-      - {file: CT-01_Commercial_Terms.pdf, page: 1, passage: "submit payment application 1 by 27 November 2026"}
+      - {file: CT-01_Commercial_Terms.pdf, page: 2, passage: "submit payment application 1 by 27 November 2026"}
   - id: pay-period
     query: How long does the Employer have to pay a certified amount?
     revisions: current
     expected:
-      - {file: CT-01_Commercial_Terms.pdf, page: 1, passage: "within 14 days of the payment certificate"}
+      - {file: CT-01_Commercial_Terms.pdf, page: 2, passage: "within 14 days of the payment certificate"}
   - id: retention
     query: What retention percentage applies?
     revisions: current
     expected:
-      - {file: CT-01_Commercial_Terms.pdf, page: 1, passage: "Retention of 3 percent applies"}
+      - {file: CT-01_Commercial_Terms.pdf, page: 2, passage: "Retention of 3 percent applies"}

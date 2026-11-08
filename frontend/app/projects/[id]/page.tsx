@@ -5,16 +5,16 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 import { AskDocuments } from "@/components/AskDocuments";
-import { ReplayLabel } from "@/components/DemoControls";
+import { DownloadButton } from "@/components/DownloadButton";
 import { useApi } from "@/components/DemoState";
 import { Icon } from "@/components/Icon";
 import { ProjectSearch } from "@/components/ProjectSearch";
-import { ProvenanceNote, RequirementList } from "@/components/Requirements";
-import { CourseDot, LoadState, RunStatus } from "@/components/ui";
-import { formatInstant, projectCode, projectName, RESOURCE_LABELS } from "@/lib/format";
+import { RequirementRegister } from "@/components/Requirements";
+import { LoadState } from "@/components/ui";
+import { projectCode, projectName, RESOURCE_LABELS } from "@/lib/format";
 import { currentRevision, isCurrent, loadProjectById, requirementsOf } from "@/lib/load";
 import type { Obligation, ProjectDocument } from "@/lib/types";
 
@@ -23,56 +23,30 @@ export default function ProjectPage() {
   const result = useApi(() => loadProjectById(id), `project-${id}`);
   return (
     <LoadState result={result}>
-      {({ project, documents, requirements, latestRun }) => {
+      {({ project, documents, requirements }) => {
         const visible = requirements.filter((r) => !r.hidden);
-        const current = visible.filter(isCurrent);
-        const superseded = visible.filter((r) => !isCurrent(r));
+        const code = projectCode(project.title, project.external_id);
         return (
-          <div className="space-y-10">
-            <header className="animate-fade-up">
-              <p className="label flex items-center gap-2">
-                <CourseDot course={project} />
-                Project {projectCode(project.title, project.external_id)}
-              </p>
-              <h1 className="page-title mt-2">{projectName(project.title)}</h1>
-              <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13.5px] text-muted">
-                <RunStatus run={latestRun} />
-                <ReplayLabel />
-              </p>
+          <>
+            <header className="flex flex-col gap-2 animate-fade-up">
+              <nav aria-label="Breadcrumb" className="text-[13px] text-muted">
+                <Link href="/projects" className="hover:text-ink">Projects</Link> / <span>{code}</span>
+              </nav>
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <span className="mono text-muted">{code}</span>
+                <h1 className="page-title">{projectName(project.title)}</h1>
+              </div>
             </header>
 
-            <section aria-labelledby="documents-heading">
-              <h2 id="documents-heading" className="section-title mb-3">Documents</h2>
-              <DocumentTable documents={documents} requirements={visible} />
-            </section>
+            <DocumentTable documents={documents} requirements={visible} />
 
-            <ProjectSearch projectId={project.id} />
+            <div className="flex flex-col gap-6">
+              <AskDocuments key={project.id} projectId={project.id} />
+              <ProjectSearch projectId={project.id} />
+            </div>
 
-            <AskDocuments projectId={project.id} />
-
-            <section aria-labelledby="register-heading" className="space-y-3">
-              <div>
-                <h2 id="register-heading" className="section-title">Current requirements</h2>
-                <p className="mt-1 text-[14px] text-muted">Stated by the current revision of each document.</p>
-              </div>
-              <RequirementList requirements={current}
-                empty="No requirements are stored for this project yet. Reset the local demo to replay the recorded extraction." />
-              <ProvenanceNote />
-            </section>
-
-            <section aria-labelledby="history-heading" className="space-y-3">
-              <div>
-                <h2 id="history-heading" className="section-title">Superseded requirements (history)</h2>
-                <p className="mt-1 text-[14px] text-muted">
-                  Stated only by a revision that has since been superseded. Kept, with their original evidence, so the
-                  history stays traceable; they no longer apply.{" "}
-                  {superseded.length > 0 && <Link href="/changes" className="text-link">See what changed</Link>}
-                </p>
-              </div>
-              <RequirementList requirements={superseded}
-                empty="None: no document in this project has been reissued yet." />
-            </section>
-          </div>
+            <RequirementRegister requirements={visible} />
+          </>
         );
       }}
     </LoadState>
@@ -80,45 +54,55 @@ export default function ProjectPage() {
 }
 
 function DocumentTable({ documents, requirements }: { documents: ProjectDocument[]; requirements: Obligation[] }) {
-  if (documents.length === 0) {
-    return <p className="panel border-dashed px-6 py-5 text-[14.5px] text-muted">No documents are stored for this project.</p>;
-  }
+  const router = useRouter();
   return (
-    <div className="panel overflow-x-auto">
-      <table className="w-full min-w-[640px] text-left text-[14px]" data-testid="document-table">
-        <thead className="border-b border-line text-[12px] text-faint">
-          <tr>
-            <th scope="col" className="px-5 py-2.5 font-medium">Document</th>
-            <th scope="col" className="px-5 py-2.5 font-medium">Type</th>
-            <th scope="col" className="px-5 py-2.5 font-medium">Current revision</th>
-            <th scope="col" className="px-5 py-2.5 font-medium">Revisions</th>
-            <th scope="col" className="px-5 py-2.5 text-right font-medium">Current requirements</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-line">
-          {documents.map((d) => {
-            const rev = currentRevision(d);
-            const count = requirementsOf(d, requirements).filter(isCurrent).length;
-            return (
-              <tr key={d.id} data-testid="document-row">
-                <td className="px-5 py-3">
-                  <Link href={`/documents/${d.id}`} className="inline-flex items-center gap-2 font-medium text-ink hover:text-link">
-                    <Icon name="file" size={15} className="text-faint" />{d.title}
-                  </Link>
-                </td>
-                <td className="px-5 py-3 text-ink-soft">{RESOURCE_LABELS[d.type] ?? d.type}</td>
-                <td className="px-5 py-3 text-ink-soft">
-                  {rev ? <>{rev.revision_label} <span className="text-faint">· imported {formatInstant(rev.imported_at)}</span></> : "None"}
-                </td>
-                <td className="px-5 py-3 text-ink-soft tabular-nums">
-                  {d.revisions.map((r) => r.revision_label).join(", ")}
-                </td>
-                <td className="px-5 py-3 text-right tabular-nums">{count}</td>
+    <section className="panel overflow-hidden" aria-labelledby="documents-heading">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-5 py-4">
+        <h2 id="documents-heading" className="section-title">Documents</h2>
+        <span className="text-[13px] text-muted">
+          {documents.length} {documents.length === 1 ? "document" : "documents"} you can read
+        </span>
+      </div>
+      {documents.length === 0 ? (
+        <p className="px-5 py-6 text-ink-soft">No documents you can read are stored for this project.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="data-table min-w-[720px]" data-testid="document-table">
+            <thead>
+              <tr>
+                <th scope="col">Document</th>
+                <th scope="col">Type</th>
+                <th scope="col">Available revisions</th>
+                <th scope="col" className="text-right">Current requirements</th>
               </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+            </thead>
+            <tbody>
+              {documents.map((d) => {
+                const count = requirementsOf(d, requirements).filter(isCurrent).length;
+                const rev = currentRevision(d);
+                return (
+                  <tr key={d.id} data-testid="document-row" className="clickable" onClick={() => router.push(`/documents/${d.id}`)}>
+                    <td>
+                      <span className="flex items-center gap-1.5">
+                        <Link href={`/documents/${d.id}`} onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-2 font-[550] text-link hover:underline">
+                          <Icon name="file" size={15} className="text-muted" />{d.title}
+                        </Link>
+                        {rev && (
+                          <DownloadButton documentId={d.id} revisionId={rev.id} fileName={rev.file_name} testId="document-download" />
+                        )}
+                      </span>
+                    </td>
+                    <td>{RESOURCE_LABELS[d.type] ?? d.type}</td>
+                    <td className="tabular-nums">{d.revisions.map((r) => r.revision_label).join(", ")}</td>
+                    <td className="text-right text-ink tabular-nums">{count}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
   );
 }

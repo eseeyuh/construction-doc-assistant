@@ -12,7 +12,7 @@ async function demoAction(page: Page, action: "reset" | "sync", done: RegExp) {
   const header = page.getByRole("banner");
   if (action === "reset") {
     await header.getByTestId("reset-demo").click();
-    await header.getByTestId("confirm-reset").click(); // a reset is always confirmed
+    await page.getByRole("alertdialog").getByTestId("confirm-reset").click(); // a reset is always confirmed
   } else {
     await header.getByTestId("simulate-sync").click();
   }
@@ -29,8 +29,10 @@ async function openEvidence(page: Page, trigger: ReturnType<Page["getByTestId"]>
 
 test("the construction demo, from reset to a superseding revision", async ({ page }) => {
   await page.goto("/");
-  // Demo sign-in: the Commercial Manager may read all three documents.
-  await page.getByTestId("sign-in-commercial-manager").click();
+  // Landing, then demo sign-in: the Commercial Manager may read all three documents.
+  await page.getByTestId("get-started").click();
+  await page.getByTestId("identity-option-commercial-manager").click();
+  await page.getByTestId("sign-in-submit").click();
   await expect(page.getByTestId("identity-name")).toHaveText("Commercial Manager");
   await demoAction(page, "reset", /Local demo reset/);
   await expect(page.getByTestId("replay-label").first()).toContainText("authored fixtures, not live AI");
@@ -68,7 +70,7 @@ test("the construction demo, from reset to a superseding revision", async ({ pag
   await expect(changed.getByTestId("requirement-after")).toContainText("72 hours' notice");
 
   // The project keeps Rev A's requirement as superseded history
-  await page.getByRole("link", { name: "Projects" }).first().click();
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Projects" }).click();
   await page.getByTestId("project-card").first().click();
   await expect(page.getByTestId("requirement").filter({ hasText: "72 hours' notice" })).toHaveAttribute("data-current", "true");
   await expect(page.getByTestId("requirement").filter({ hasText: "48 hours' notice" })).toHaveAttribute("data-current", "false");

@@ -6,8 +6,8 @@ import type { IconName } from "@/components/Icon";
 
 /** Top-level product areas. */
 export const NAV_ITEMS: readonly { href: string; label: string; icon: IconName }[] = [
-  { href: "/", label: "Overview", icon: "home" },
-  { href: "/projects", label: "Projects", icon: "library" },
+  { href: "/", label: "Overview", icon: "grid" },
+  { href: "/projects", label: "Projects", icon: "folder" },
   { href: "/changes", label: "Revisions", icon: "history" },
 ];
 

@@ -344,7 +344,7 @@ def markdown(report: dict[str, Any]) -> str:
     lines += [
         "",
         (
-            "The corpus is four one-page synthetic PDFs (one chunk per revision), so these "
+            "The corpus is four short synthetic PDFs (3-4 pages, one chunk per page), so these "
             "numbers check the pipeline's behaviour (revision filtering, citations, ranking "
             "plumbing); they are not evidence of retrieval quality on real project documents."
         ),

@@ -5,9 +5,11 @@
       "id": "notice-current",
       "rank": 1,
       "returned": [
-        "IP-01_Inspection_Procedure_RevB.pdf p1",
-        "CT-01_Commercial_Terms.pdf p1",
-        "SSR-01_Site_Safety_Rules.pdf p1"
+        "IP-01_Inspection_Procedure_RevB.pdf p2,3,4",
+        "IP-01_Inspection_Procedure_RevB.pdf p1,2",
+        "CT-01_Commercial_Terms.pdf p1,2",
+        "SSR-01_Site_Safety_Rules.pdf p2,3",
+        "SSR-01_Site_Safety_Rules.pdf p1,2"
       ],
       "revisions": "current"
     },
@@ -16,8 +18,10 @@
       "id": "notice-history",
       "rank": 2,
       "returned": [
-        "IP-01_Inspection_Procedure_RevB.pdf p1",
-        "IP-01_Inspection_Procedure_RevA.pdf p1"
+        "IP-01_Inspection_Procedure_RevB.pdf p2,3,4",
+        "IP-01_Inspection_Procedure_RevA.pdf p2,3,4",
+        "IP-01_Inspection_Procedure_RevA.pdf p1,2",
+        "IP-01_Inspection_Procedure_RevB.pdf p1,2"
       ],
       "revisions": "all"
     },
@@ -26,7 +30,8 @@
       "id": "notice-current-old-figure",
       "rank": 1,
       "returned": [
-        "IP-01_Inspection_Procedure_RevB.pdf p1"
+        "IP-01_Inspection_Procedure_RevB.pdf p2,3,4",
+        "IP-01_Inspection_Procedure_RevB.pdf p1,2"
       ],
       "revisions": "current"
     },
@@ -35,18 +40,21 @@
       "id": "revision-note",
       "rank": 1,
       "returned": [
-        "IP-01_Inspection_Procedure_RevB.pdf p1"
+        "IP-01_Inspection_Procedure_RevB.pdf p2,3,4"
       ],
       "revisions": "current"
     },
     {
       "forbidden_returned": [],
       "id": "covering-work",
-      "rank": 1,
+      "rank": 2,
       "returned": [
-        "IP-01_Inspection_Procedure_RevB.pdf p1",
-        "SSR-01_Site_Safety_Rules.pdf p1",
-        "CT-01_Commercial_Terms.pdf p1"
+        "IP-01_Inspection_Procedure_RevB.pdf p1,2",
+        "IP-01_Inspection_Procedure_RevB.pdf p2,3,4",
+        "SSR-01_Site_Safety_Rules.pdf p1,2",
+        "SSR-01_Site_Safety_Rules.pdf p2,3",
+        "CT-01_Commercial_Terms.pdf p1,2",
+        "CT-01_Commercial_Terms.pdf p2,3"
       ],
       "revisions": "current"
     },
@@ -55,8 +63,11 @@
       "id": "inspection-record",
       "rank": 1,
       "returned": [
-        "IP-01_Inspection_Procedure_RevB.pdf p1",
-        "SSR-01_Site_Safety_Rules.pdf p1"
+        "IP-01_Inspection_Procedure_RevB.pdf p2,3,4",
+        "IP-01_Inspection_Procedure_RevB.pdf p1,2",
+        "CT-01_Commercial_Terms.pdf p1,2",
+        "SSR-01_Site_Safety_Rules.pdf p1,2",
+        "SSR-01_Site_Safety_Rules.pdf p2,3"
       ],
       "revisions": "current"
     },
@@ -65,16 +76,22 @@
       "id": "ppe",
       "rank": 1,
       "returned": [
-        "SSR-01_Site_Safety_Rules.pdf p1",
-        "IP-01_Inspection_Procedure_RevB.pdf p1"
+        "SSR-01_Site_Safety_Rules.pdf p1,2",
+        "IP-01_Inspection_Procedure_RevB.pdf p1,2",
+        "SSR-01_Site_Safety_Rules.pdf p2,3",
+        "IP-01_Inspection_Procedure_RevB.pdf p2,3,4",
+        "CT-01_Commercial_Terms.pdf p1,2",
+        "CT-01_Commercial_Terms.pdf p2,3"
       ],
       "revisions": "current"
     },
     {
       "forbidden_returned": null,
       "id": "ppe-paraphrase",
-      "rank": null,
-      "returned": [],
+      "rank": 1,
+      "returned": [
+        "SSR-01_Site_Safety_Rules.pdf p1,2"
+      ],
       "revisions": "current"
     },
     {
@@ -82,7 +99,9 @@
       "id": "hi-vis",
       "rank": 1,
       "returned": [
-        "SSR-01_Site_Safety_Rules.pdf p1"
+        "SSR-01_Site_Safety_Rules.pdf p1,2",
+        "SSR-01_Site_Safety_Rules.pdf p2,3",
+        "IP-01_Inspection_Procedure_RevB.pdf p2,3,4"
       ],
       "revisions": "current"
     },
@@ -91,8 +110,10 @@
       "id": "visitors",
       "rank": 1,
       "returned": [
-        "SSR-01_Site_Safety_Rules.pdf p1",
-        "IP-01_Inspection_Procedure_RevB.pdf p1"
+        "SSR-01_Site_Safety_Rules.pdf p2,3",
+        "IP-01_Inspection_Procedure_RevB.pdf p1,2",
+        "IP-01_Inspection_Procedure_RevB.pdf p2,3,4",
+        "SSR-01_Site_Safety_Rules.pdf p1,2"
       ],
       "revisions": "current"
     },
@@ -101,7 +122,8 @@
       "id": "induction-paraphrase",
       "rank": 1,
       "returned": [
-        "SSR-01_Site_Safety_Rules.pdf p1"
+        "SSR-01_Site_Safety_Rules.pdf p2,3",
+        "CT-01_Commercial_Terms.pdf p1,2"
       ],
       "revisions": "current"
     },
@@ -110,9 +132,12 @@
       "id": "application-1",
       "rank": 1,
       "returned": [
-        "CT-01_Commercial_Terms.pdf p1",
-        "IP-01_Inspection_Procedure_RevB.pdf p1",
-        "SSR-01_Site_Safety_Rules.pdf p1"
+        "CT-01_Commercial_Terms.pdf p1,2",
+        "CT-01_Commercial_Terms.pdf p2,3",
+        "IP-01_Inspection_Procedure_RevB.pdf p1,2",
+        "SSR-01_Site_Safety_Rules.pdf p1,2",
+        "SSR-01_Site_Safety_Rules.pdf p2,3",
+        "IP-01_Inspection_Procedure_RevB.pdf p2,3,4"
       ],
       "revisions": "current"
     },
@@ -121,7 +146,10 @@
       "id": "pay-period",
       "rank": 1,
       "returned": [
-        "CT-01_Commercial_Terms.pdf p1"
+        "CT-01_Commercial_Terms.pdf p1,2",
+        "CT-01_Commercial_Terms.pdf p2,3",
+        "IP-01_Inspection_Procedure_RevB.pdf p1,2",
+        "SSR-01_Site_Safety_Rules.pdf p1,2"
       ],
       "revisions": "current"
     },
@@ -130,20 +158,21 @@
       "id": "retention",
       "rank": 1,
       "returned": [
-        "CT-01_Commercial_Terms.pdf p1"
+        "CT-01_Commercial_Terms.pdf p1,2",
+        "CT-01_Commercial_Terms.pdf p2,3"
       ],
       "revisions": "current"
     }
   ],
   "database_counts": {
     "chunk_embedding_links": 0,
-    "chunks": 4,
+    "chunks": 8,
     "model_calls": 0
   },
   "dataset": {
     "cases": 14,
     "name": "construction-retrieval",
-    "sha256": "4a7a8c2680c33ef74c7b7e4de2abd90b881c4713ecb3315ade497c627c74d4ea",
+    "sha256": "a437d8e8d905622cee9a5e1f9a8878ce9c49ad241ca3a01bbafbfa4cda149a7c",
     "version": "v1"
   },
   "embedding_space": null,
@@ -152,14 +181,14 @@
   "metrics": {
     "cases": 14,
     "hit_at_1": 12,
-    "hit_at_10": 13,
-    "hit_at_3": 13,
+    "hit_at_10": 14,
+    "hit_at_3": 14,
     "invariant_cases": 5,
     "invariant_violations": 0,
-    "mrr_at_10": 0.8929
+    "mrr_at_10": 0.9286
   },
   "mode": "lexical",
-  "ran_at": "2026-11-08T11:45:16+00:00",
+  "ran_at": "2026-11-08T21:25:18+00:00",
   "top_k": 10,
   "versions": {
     "chunker": "span-pack/v1",

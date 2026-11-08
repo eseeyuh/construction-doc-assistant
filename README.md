@@ -128,14 +128,14 @@ Inherited endpoints that are not filtered per document require full access. Heal
 
 ## Two-minute walkthrough
 
-The project is **KYD001 Kestrel Yard Depot Extension (fictional)**, with four synthetic one-page documents: IP-01 Rev A (48 hours' notice), IP-01 Rev B (supersedes Rev A, 72 hours), SSR-01 and CT-01 (payment schedule and retention). The live steps assume the credentials and indexing above.
+The project is **KYD001 Kestrel Yard Depot Extension (fictional)**, with four synthetic PDFs of three or four pages each: IP-01 Rev A (48 hours' notice), IP-01 Rev B (supersedes Rev A, 72 hours), SSR-01 and CT-01 (payment schedule and retention). Besides the requirement sentences, each carries descriptive context: document control, revision or issue history, background, scope, definitions, informational tables and labelled illustrative examples. Every page carries the synthetic-document label, and none of it claims compliance with any real standard. The live steps assume the credentials and indexing above.
 
 1. **Current-revision search (about 30 seconds).** Sign in as **Commercial Manager**, press **Load next revision (demo)**, and open the project.
    - In **Search documents**, choose **Hybrid (live embeddings)** and search *How much notice before an inspection?* IP-01 Rev B ranks first and Rev A is not returned; the panel reports one superseded revision excluded. Other documents may follow as weaker vector matches.
    - Tick **Include superseded revisions (history)**: Rev A appears, labelled "Superseded by Revision B" with the supersession quote.
 2. **Cited chat (about 30 seconds).** In **Ask project documents**, ask *How much notice must be given before a hold point inspection under the current inspection procedure?*
    - The answer shows the `search_documents` call the model made and the retrieval mode (hybrid).
-   - It cites `[S1]`, IP-01 Rev B, page 1: 72 hours.
+   - Its source line names IP-01 Rev B and the pages of the retrieved passage; the 72 hours' notice sentence is on page 3.
 3. **Restricted commercial information (about 30 seconds).** Press **Switch** in the sidebar and sign in as **Site Engineer**.
    - Commercial Terms disappears from the document list.
    - Searching *retention percentage on payment applications* returns no commercial passage.
@@ -152,6 +152,8 @@ The project mixes recorded fixtures with live model features. They are kept apar
 
 The **requirement register** is built by replaying **authored fixture answers**. These are answers written by hand for the synthetic documents and recorded under the model name `fixture:authored-construction/v1`. They pass through the same extraction gate and evidence checks as model output would. They are **not model output and not an evaluation of a model**, and the interface labels them "Offline replay · authored fixtures, not live AI". They show that the pipeline, gate and revision logic behave correctly on known answers. No construction extraction has been evaluated against a live model.
 
+**The register is curated.** It holds the 11 requirement sentences the synthetic documents were written around. The surrounding pages were deliberately written as descriptive context, with no added duties, deadlines, prohibitions, acceptance criteria or payment conditions, so the register stays complete without any top-N limit or filtering of valid requirements. It is a curated synthetic answer set, not a claim about what an extractor would find in real documents.
+
 ### Verified offline
 
 - Lexical search: tests, a small labelled benchmark (below) and the running demo.
@@ -160,7 +162,7 @@ The **requirement register** is built by replaying **authored fixture answers**.
 
 ### Verified live
 
-These were single, minimal checks against Nebius Token Factory on the running local demo, on 8 November 2026. They are not a benchmark.
+These were single, minimal checks against Nebius Token Factory on the running local demo, on 8 November 2026, with the earlier one-page versions of the PDFs (page numbers below refer to those). They are not a benchmark.
 
 | Check | Result |
 |---|---|
@@ -191,7 +193,7 @@ Hybrid search is **refused, never downgraded**. It answers 503 without credentia
 
 **Supersession.** A revision is out of force only when another revision of the same document states that it supersedes it, naming the code the older revision states for itself (rule `revision-supersession/v1`). Upload order alone never supersedes anything, and an ambiguous statement excludes nothing.
 
-**Retrieval benchmark.** `evals/datasets/construction-retrieval/v1/cases.yaml` holds 14 hand-labelled queries over the four pages. Lexical only: Hit@1 12/14, Hit@3 13/14, MRR@10 0.893, and Rev A returned in 0 of 5 current-only cases ([report](evals/reports/construction-retrieval-v1-lexical.md)). The misses show the limits of lexical search: "hard hats and boots" does not match "safety helmets". **With four single-page documents, these numbers are a regression check of the pipeline, not a measure of retrieval quality.**
+**Retrieval benchmark.** `evals/datasets/construction-retrieval/v1/cases.yaml` holds 14 hand-labelled queries over the four documents, each labelled with the page that holds the expected passage. Lexical only: Hit@1 12/14, Hit@3 14/14, MRR@10 0.929, and Rev A returned in 0 of 5 current-only cases ([report](evals/reports/construction-retrieval-v1-lexical.md)). The span-pack chunker joins neighbouring short pages, so a retrieved chunk can cover two or three pages; each citation keeps the page of its own quote. **With four short synthetic documents, these numbers are a regression check of the pipeline, not a measure of retrieval quality.**
 
 ## Development and checks
 
@@ -210,8 +212,8 @@ From `frontend/`: `npm ci`, `npm run lint`, `npm run typecheck`, `npm run build`
 
 ## Limitations
 
-- **Synthetic, four-page corpus.** One fictional project with four one-page documents. Nothing here was tested on real construction documents, scanned drawings or long specifications.
-- **No general retrieval-quality claim.** The benchmark is 14 queries over four pages, and the live checks were single queries. Chunks are whole pages, and lexical search misses paraphrases.
+- **Small synthetic corpus.** One fictional project with four documents of three or four pages. Nothing here was tested on real construction documents, scanned drawings or long specifications.
+- **No general retrieval-quality claim.** The benchmark is 14 queries over four short documents, and the live checks were single queries. Chunks pack whole short pages, and lexical search misses paraphrases.
 - **Authored fixtures, not model extraction.** The requirement register comes from hand-written answers. There is no labelled construction extraction dataset and no measured extraction accuracy.
 - **Demo authentication only.** Two fixed identities, no passwords, accounts or sessions beyond a per-process signing key. Permissions are by document type only. The checks above are not a security validation.
 - **No production deployment.** The project runs only as a local Docker Compose stack, with no hosting, TLS, secret management, monitoring or multi-user hardening.

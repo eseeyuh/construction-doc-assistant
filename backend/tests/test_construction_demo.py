@@ -169,7 +169,7 @@ async def test_construction_demo_extracts_then_brings_in_revision_b(
         "Contractor", "48 hours' notice", None)  # fmt: skip
     (evidence,) = notice_a["evidence"]
     assert (evidence["page_number"], evidence["version_number"], evidence["current_version"]) == (
-        1, 1, True)  # fmt: skip
+        3, 1, True)  # fmt: skip
     assert evidence["resource_title"] == "Inspection Procedure IP-01"
     assert (evidence["model"], evidence["prompt_version"]) == (FIXTURE_MODEL, OBLIGATION_PROMPT)
     # Unknown stays unknown.

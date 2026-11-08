@@ -79,6 +79,43 @@ async function request<T>(path: string, init: RequestInit = {}, timeoutMs = READ
   return body as T;
 }
 
+// A source file: a few hundred kilobytes over the local network.
+const FILE_TIMEOUT_MS = 60_000;
+
+/** A stored file, fetched with the demo sign-in in the Authorization header
+ * (never in the URL); the API checks the identity's document access first. */
+async function requestFile(path: string, timeoutMs = FILE_TIMEOUT_MS): Promise<Blob> {
+  if (apiBaseUrl === null) {
+    throw new ApiError(0, "NEXT_PUBLIC_API_BASE_URL is missing or invalid (see frontend/.env.example).");
+  }
+  const token = currentSession()?.token;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    let response: Response;
+    try {
+      response = await fetch(`${apiBaseUrl}/api/v1${path}`, {
+        signal: controller.signal,
+        cache: "no-store",
+        headers: { Accept: "application/pdf, application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+    } catch {
+      throw new ApiError(0, controller.signal.aborted
+        ? `The API did not answer within ${timeoutMs / 1000} s.`
+        : "The API is unreachable. Is it running?");
+    }
+    if (response.status === 401 && token) writeSession(null);
+    if (!response.ok) {
+      const body: unknown = await response.json().catch(() => null);
+      const detail = typeof body === "object" && body !== null && "detail" in body ? (body as { detail: unknown }).detail : null;
+      throw new ApiError(response.status, typeof detail === "string" ? detail : `HTTP ${response.status}`);
+    }
+    return await response.blob();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export const api = {
   identities: () => request<DemoIdentity[]>("/auth/identities"),
   signIn: (identity: string) =>
@@ -107,6 +144,9 @@ export const api = {
   search: (projectId: string, body: SearchRequest) =>
     request<SearchResult>(`/courses/${projectId}/search`, { method: "POST", body: JSON.stringify(body) },
       LIVE_TIMEOUT_MS),
+  /** The exact stored file of one revision of a document the identity may read. */
+  revisionFile: (documentId: string, revisionId: string) =>
+    requestFile(`/documents/${documentId}/revisions/${revisionId}/file`),
   liveDocumentRequirements: (documentId: string) =>
     request<LiveRequirements>(`/documents/${documentId}/live-requirements`, { method: "POST" }, LIVE_TIMEOUT_MS),
 };

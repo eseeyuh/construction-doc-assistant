@@ -1,0 +1,1289 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Construction Document Assistant</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400..600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: 248px sidebar on surface + 60px header + content on canvas, max 1200px. Tokens: CareerMerge design system. */
+:root{
+  --canvas:#0a0a0c; --surface:#141518; --sunken:#1b1c21; --hover:#23242b;
+  --border:#2a2b32; --border-strong:#3a3c45;
+  --ink:#ededf0; --ink-2:#b6b8c0; --ink-3:#8f929c;
+  --accent:#8d90f6; --accent-hover:#a5a8f9; --accent-soft:#22234a; --accent-ink:#bfc1ff; --on-accent:#0e0f12;
+  --success:#5fc48e; --success-soft:#15291e; --warning:#e3aa52; --warning-soft:#2e2413; --danger:#f08178; --danger-soft:#341a19;
+  --scrim:rgba(0,0,0,0.6);
+  --shadow-card:0 1px 2px rgba(0,0,0,0.3);
+  --shadow-raised:0 8px 24px rgba(0,0,0,0.45);
+  --shadow-overlay:0 24px 64px rgba(0,0,0,0.6);
+  --wave-glow:#16171c; --wave-band:rgba(255,255,255,0.022); --wave-band-2:rgba(255,255,255,0.016); --wave-line:rgba(255,255,255,0.05);
+  --sans:"Geist",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Geist Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --gutter:32px; --rail:64px; --rail-open:240px;
+  color-scheme:dark;
+}
+/* Single committed dark look: the same tokens apply whatever the viewer's theme. */
+.waves{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;background:radial-gradient(120% 80% at 50% 35%,var(--wave-glow) 0%,var(--canvas) 70%)}
+.wave-layer{position:absolute;inset:0;animation:wave-sway 26s ease-in-out infinite alternate}
+.wave-layer svg{position:absolute;top:0;left:0;width:200%;height:100%;animation:wave-drift 80s linear infinite}
+.wave-layer:nth-child(2){animation-duration:34s;animation-delay:-9s}
+.wave-layer:nth-child(2) svg{animation-duration:110s;animation-direction:reverse}
+.wave-layer:nth-child(3){animation-duration:21s;animation-delay:-4s}
+.wave-layer:nth-child(3) svg{animation-duration:62s}
+@keyframes wave-drift{to{transform:translateX(-50%)}}
+@keyframes wave-sway{from{transform:translateY(-3%)}to{transform:translateY(3%)}}
+@media (prefers-reduced-motion: reduce){.wave-layer,.wave-layer svg{animation:none}}
+body{background:var(--canvas);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:21px;-webkit-font-smoothing:antialiased}
+#root{width:100%;min-height:100vh;min-height:100dvh}
+button,input,textarea{font:inherit;color:inherit}
+a{color:var(--accent)} a:hover{color:var(--accent-hover)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{margin:0;text-wrap:balance}
+p{margin:0}
+.mono{font-family:var(--mono);font-size:12.5px;line-height:18px}
+.num{font-variant-numeric:tabular-nums}
+.overline{font-size:11px;line-height:16px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.display{font-size:30px;line-height:36px;font-weight:600;letter-spacing:-.02em}
+.heading{font-size:17px;line-height:24px;font-weight:600;letter-spacing:-.01em}
+.small{font-size:13px;line-height:18px}
+.muted{color:var(--ink-3)} .secondary{color:var(--ink-2)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:40px;padding:0 16px;border-radius:8px;border:1px solid transparent;font-size:14px;font-weight:550;cursor:pointer;text-decoration:none;white-space:nowrap;transition:background .15s ease-out,border-color .15s ease-out}
+.btn-primary{background:var(--accent);color:var(--on-accent)} .btn-primary:hover:not(:disabled){background:var(--accent-hover);color:var(--on-accent)}
+.btn-secondary{background:var(--surface);border-color:var(--border-strong);color:var(--ink)} .btn-secondary:hover:not(:disabled){background:var(--hover);color:var(--ink)}
+.btn-ghost{background:transparent;color:var(--ink-2);font-weight:500} .btn-ghost:hover:not(:disabled){background:var(--hover)}
+.btn-sm{height:32px;padding:0 10px;font-size:13px;font-weight:500}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-card)}
+.pad{padding:20px}
+.stack{display:flex;flex-direction:column}
+.row{display:flex;flex-wrap:wrap;align-items:center}
+.badge{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:500;white-space:nowrap}
+.b-ok{background:var(--success-soft);color:var(--success)}
+.b-neutral{background:var(--sunken);color:var(--ink-2)}
+.b-accent{background:var(--accent-soft);color:var(--accent-ink)}
+.b-warn{background:var(--warning-soft);color:var(--warning)}
+.b-danger{background:var(--danger-soft);color:var(--danger)}
+.pill{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;font-size:12px;background:var(--sunken);color:var(--ink-2)}
+.dot{width:6px;height:6px;border-radius:999px;background:currentColor;flex:none}
+.well{background:var(--sunken);border-radius:8px}
+.notice{display:flex;gap:10px;padding:12px 14px;border-radius:8px;font-size:13px;line-height:18px}
+.notice svg{flex:none;margin-top:1px}
+.n-neutral{background:var(--sunken);color:var(--ink-2)}
+.n-warn{background:var(--warning-soft);color:var(--ink)}
+.n-danger{background:var(--danger-soft);color:var(--ink)}
+.n-accent{background:var(--accent-soft);color:var(--ink)}
+.input{height:40px;box-sizing:border-box;padding:0 12px;border:1px solid var(--border-strong);border-radius:8px;background:var(--surface);color:var(--ink);font-size:14px;width:100%}
+textarea.input{height:auto;padding:10px 12px;line-height:21px;resize:vertical}
+.input[readonly]{background:var(--sunken);font-family:var(--mono);font-size:12.5px}
+.field{display:flex;flex-direction:column;gap:6px;font-size:13px;line-height:18px;font-weight:500}
+.chip{height:28px;padding:0 10px;border-radius:999px;border:1px solid var(--border);background:var(--surface);font-size:12px;color:var(--ink-2);cursor:pointer}
+.chip:hover{background:var(--hover);color:var(--ink)}
+.skel{background:var(--sunken);border-radius:6px;animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.55}}
+@media (prefers-reduced-motion: reduce){.skel{animation:none}*{transition:none!important}}
+
+/* shell */
+.app{position:relative;z-index:1;display:flex;width:100%;min-height:100vh;min-height:100dvh}
+.sidebar{position:fixed;top:0;bottom:0;left:0;z-index:36;width:calc(var(--rail) + env(safe-area-inset-left,0px));box-sizing:border-box;background:var(--surface);border-right:1px solid var(--border);padding-block:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-bottom,0px));padding-left:calc(12px + env(safe-area-inset-left,0px));padding-right:12px;display:flex;flex-direction:column;gap:24px;overflow:hidden;transition:width .24s ease-out,box-shadow .24s ease-out}
+.sidebar.expanded{width:calc(var(--rail-open) + env(safe-area-inset-left,0px));box-shadow:var(--shadow-overlay)}
+.lbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;opacity:0;transition:opacity .14s ease-out}
+.sidebar.expanded .lbl{opacity:1;transition-delay:.08s}
+.brand{display:flex;align-items:center;gap:10px;height:40px;padding:0 4px;border:0;border-radius:8px;background:transparent;color:var(--ink);font-weight:600;line-height:18px;text-align:left;cursor:pointer;width:100%;flex:none}
+.brand:hover{background:var(--hover)}
+.logo{width:32px;height:32px;flex:none;border-radius:8px;background:var(--accent);color:var(--on-accent);display:flex;align-items:center;justify-content:center}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button,.rail-item{display:flex;align-items:center;gap:10px;height:40px;padding:0 10px;border-radius:8px;border:0;background:transparent;color:var(--ink-2);font-size:14px;text-align:left;cursor:pointer;width:100%;flex:none}
+.nav button svg,.rail-item svg,.proj-link svg{flex:none}
+.nav button:hover,.rail-item:hover{background:var(--hover);color:var(--ink)}
+.nav button[aria-current="page"]{background:var(--accent-soft);color:var(--accent-ink);font-weight:550}
+.proj-link{display:flex;align-items:center;gap:10px;min-height:40px;padding:8px 10px;border-radius:8px;border:0;background:transparent;color:var(--ink-2);text-align:left;cursor:pointer;width:100%}
+.proj-link:hover,.proj-link.on{background:var(--sunken)}
+.identity{margin-top:auto;border-top:1px solid var(--border);padding-top:16px;display:flex;flex-direction:column;gap:8px}
+.id-row{display:flex;align-items:center;gap:10px;padding-left:4px}
+.avatar{width:32px;height:32px;flex:none;border-radius:999px;background:var(--sunken);color:var(--ink-2);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.rail-tip{position:fixed;left:calc(var(--rail) + 8px + env(safe-area-inset-left,0px));transform:translateY(-50%);z-index:37;padding:6px 10px;border-radius:6px;background:var(--hover);border:1px solid var(--border-strong);color:var(--ink);font-size:12px;line-height:16px;white-space:nowrap;box-shadow:var(--shadow-raised);pointer-events:none}
+.main{position:relative;z-index:1;flex:1 1 auto;min-width:0;margin-left:calc(var(--rail) + env(safe-area-inset-left,0px));display:flex;flex-direction:column}
+.floating{position:fixed;top:max(16px,env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));z-index:35;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;padding:6px;border-radius:12px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-raised);max-width:calc(100vw - var(--rail) - 32px)}
+.content{width:100%;max-width:1200px;box-sizing:border-box;padding-block:84px 64px;padding-left:var(--gutter);padding-right:max(var(--gutter),env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:24px}
+@media (max-width:720px){:root{--gutter:16px}.content{padding-block:120px 48px}}
+
+/* tables */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px;line-height:20px}
+th{background:var(--sunken);text-align:left;padding:10px 12px;font-size:11px;line-height:16px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);white-space:nowrap}
+td{padding:12px;border-top:1px solid var(--border);vertical-align:top;color:var(--ink-2)}
+th:first-child,td:first-child{padding-left:20px} th:last-child,td:last-child{padding-right:20px}
+tr.clickable{cursor:pointer} tr.clickable:hover td{background:var(--hover)}
+.link-btn{border:0;background:none;padding:0;color:var(--accent);font-weight:550;cursor:pointer;text-align:left;font-size:14px}
+.link-btn:hover{color:var(--accent-hover);text-decoration:underline}
+.ns{color:var(--ink-3);font-style:italic}
+
+/* segmented + tabs */
+.seg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.seg label{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer}
+.seg label.on{border-color:var(--accent);background:var(--accent-soft)}
+.seg label.off{opacity:.6;cursor:not-allowed}
+.seg input{margin:3px 0 0;accent-color:var(--accent)}
+.tabs{display:flex;gap:4px;padding:4px;border-radius:8px;background:var(--sunken)}
+.tabs button{height:32px;padding:0 12px;border:0;border-radius:6px;background:transparent;color:var(--ink-2);font-size:13px;font-weight:550;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-card)}
+.checkbox{display:flex;align-items:center;gap:8px;cursor:pointer}
+.checkbox input{width:16px;height:16px;margin:0;accent-color:var(--accent)}
+
+/* overlays */
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:40;display:flex}
+.drawer{margin-left:auto;width:100%;max-width:480px;height:100%;box-sizing:border-box;background:var(--surface);box-shadow:var(--shadow-overlay);border-radius:16px 0 0 16px;padding:24px max(24px,env(safe-area-inset-right,0px)) 24px 24px;display:flex;flex-direction:column;gap:20px;overflow-y:auto;animation:slide .24s ease-out}
+@keyframes slide{from{transform:translateX(24px);opacity:0}}
+.dialog{margin:120px auto auto;width:calc(100% - 32px);max-width:440px;background:var(--surface);border-radius:16px;box-shadow:var(--shadow-overlay);padding:24px;display:flex;flex-direction:column;gap:16px}
+.icon-btn{width:36px;height:36px;flex:none;border:0;border-radius:8px;background:var(--sunken);color:var(--ink-2);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.icon-btn:hover{background:var(--hover)}
+blockquote{margin:0}
+.quote{padding:16px;border-radius:8px;background:var(--sunken);font-size:15px;line-height:23px;color:var(--ink)}
+dl.meta{margin:0;display:grid;grid-template-columns:110px minmax(0,1fr);gap:10px 12px;font-size:14px;line-height:20px}
+dl.meta dt{color:var(--ink-3)} dl.meta dd{margin:0}
+.popover{position:absolute;right:0;top:calc(100% + 8px);z-index:30;width:min(360px,calc(100vw - 32px));background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-raised);padding:16px;display:flex;flex-direction:column;gap:14px}
+.switch{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;cursor:pointer}
+.switch input{appearance:none;flex:none;width:34px;height:20px;border-radius:999px;background:var(--border-strong);position:relative;cursor:pointer;margin-top:1px;transition:background .15s ease-out}
+.switch input::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:999px;background:var(--surface);transition:transform .15s ease-out}
+.switch input:checked{background:var(--accent)} .switch input:checked::after{transform:translateX(14px)}
+.metric{font-size:28px;line-height:32px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.progress{height:6px;border-radius:999px;background:var(--sunken);overflow:hidden}
+.progress>div{height:100%;background:var(--accent);transition:width .3s ease-out}
+mark{background:var(--warning-soft);color:inherit;border-radius:3px;padding:0 1px}
+</style>
+
+<div id="root"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef } = React;
+
+/* =====================================================================
+   MOCK BACKEND — local only. Every call takes the role and filters by
+   permission before returning, so restricted content never reaches the UI.
+   ===================================================================== */
+const ROLES = {
+  site: { id: 'site', name: 'Site Engineer', initials: 'SE', user: 'site.engineer@demo.invalid', access: 'Reads Inspection Procedure and Site Safety Rules.', docs: ['IP-01', 'SSR-01'] },
+  commercial: { id: 'commercial', name: 'Commercial Manager', initials: 'CM', user: 'commercial.manager@demo.invalid', access: 'Also reads Commercial Terms.', docs: ['IP-01', 'SSR-01', 'CT-01'] }
+};
+const DOCS = {
+  'IP-01': { id: 'IP-01', name: 'Inspection Procedure', type: 'Procedure' },
+  'SSR-01': { id: 'SSR-01', name: 'Site Safety Rules', type: 'Rules' },
+  'CT-01': { id: 'CT-01', name: 'Commercial Terms', type: 'Contract terms' }
+};
+const REVISIONS = [
+  { key: 'IP-01/A', doc: 'IP-01', stored: 'A', stated: 'Revision A', file: 'IP-01_Inspection_Procedure_RevA.pdf', initial: true },
+  { key: 'IP-01/B', doc: 'IP-01', stored: 'B', stated: 'Revision B', file: 'IP-01_Inspection_Procedure_RevB.pdf', initial: false, supersedes: 'IP-01/A', supersession: { quote: 'This Revision B supersedes Revision A of IP-01 in its entirety.', page: 1 } },
+  { key: 'SSR-01/v1', doc: 'SSR-01', stored: 'v1', stated: null, file: 'SSR-01_Site_Safety_Rules.pdf', initial: true },
+  { key: 'CT-01/1', doc: 'CT-01', stored: '1', stated: 'Revision 1', file: 'CT-01_Commercial_Terms.pdf', initial: true }
+];
+const revByKey = (k) => REVISIONS.find((r) => r.key === k);
+const revName = (r) => r.stated ? r.stated : 'no revision stated';
+
+const ipPassages = (rv, hours) => {
+  const k = 'IP-01/' + rv;
+  return [
+    { rev: k, page: 1, sec: 'Cover', text: rv === 'B'
+        ? 'Inspection Procedure IP-01, Revision B. Document status: This Revision B supersedes Revision A of IP-01 in its entirety. Synthetic document prepared for the Kestrel Yard Depot Extension (fictional).'
+        : 'Inspection Procedure IP-01, Revision A. Synthetic document prepared for the Kestrel Yard Depot Extension (fictional). This procedure sets out how work is offered for inspection.',
+      ans: rv === 'B' ? 'Revision B of the Inspection Procedure replaces Revision A in full.' : 'The Inspection Procedure sets out how work is offered for inspection.' },
+    { rev: k, page: 2, sec: '§3.1', text: '3.1 Notice of inspection. The Contractor shall give the Client’s Representative not less than ' + hours + ' hours’ notice before any work is covered up or otherwise made inaccessible for inspection.',
+      ans: 'The Contractor must give the Client’s Representative at least ' + hours + ' hours’ notice before any work is covered up or made inaccessible for inspection.' },
+    { rev: k, page: 3, sec: '§4.2', text: '4.2 Inspection records. The Site Engineer shall record each inspection on Inspection Record form IR-1 and submit it to the Client’s Representative within one working day.',
+      ans: 'The Site Engineer records each inspection on form IR-1 and submits it within one working day.' },
+    { rev: k, page: 3, sec: '§4.4', text: '4.4 Failed inspections. Work that fails inspection shall be corrected and offered for re-inspection. The same notice period applies to re-inspection.',
+      ans: 'Work that fails inspection must be corrected and offered for re-inspection, with the same notice period.' },
+    { rev: k, page: 4, sec: '§5.1', text: '5.1 Record keeping. The Contractor shall keep all inspection records on site and make them available to the Client’s Representative on request.',
+      ans: 'Inspection records must be kept on site and made available on request.' }
+  ];
+};
+const PASSAGES = [
+  ...ipPassages('A', 48), ...ipPassages('B', 72),
+  { rev: 'SSR-01/v1', page: 1, sec: '§2.1', text: '2.1 Head protection. Safety helmets shall be worn at all times by all persons within the construction area.', ans: 'Everyone in the construction area must wear a safety helmet at all times.' },
+  { rev: 'SSR-01/v1', page: 1, sec: '§2.2', text: '2.2 Foot protection. Safety footwear with protective toecaps is required for all persons on site.', ans: 'Everyone on site must wear safety footwear with protective toecaps.' },
+  { rev: 'SSR-01/v1', page: 2, sec: '§3.1', text: '3.1 Site induction. No person shall start work on site until they have completed the site induction.', ans: 'Nobody may start work on site before completing the site induction.' },
+  { rev: 'SSR-01/v1', page: 2, sec: '§3.4', text: '3.4 Visitors. Visitors attending an inspection shall report to the site office and be escorted at all times.', ans: 'Visitors attending an inspection must report to the site office and be escorted at all times.' },
+  { rev: 'CT-01/1', page: 3, sec: '§6.2', text: '6.2 Applications for payment. The Contractor shall submit an interim payment application no later than the 25th day of each month.', ans: 'The Contractor submits an interim payment application by the 25th of each month.' },
+  { rev: 'CT-01/1', page: 4, sec: '§6.5', text: '6.5 Pay less notices. Any pay less notice shall be issued by the Client not later than 5 days before the final date for payment.', ans: 'The Client must issue any pay less notice at least 5 days before the final date for payment.' },
+  { rev: 'CT-01/1', page: 5, sec: '§7.1', text: '7.1 Retention. Retention of 3% shall be deducted from each interim payment. Half of the retention is released at practical completion.', ans: 'Retention of 3% is deducted from each interim payment, with half released at practical completion.' },
+  { rev: 'CT-01/1', page: 6, sec: '§9.1', text: '9.1 Compensation events. The Contractor shall notify the Client in writing of a compensation event within 8 weeks of becoming aware of it.', ans: 'The Contractor must notify the Client in writing of a compensation event within 8 weeks of becoming aware of it.' }
+];
+
+const ipReqs = (rv, hours) => [
+  { id: 'ip-notice-' + rv, rev: 'IP-01/' + rv, text: 'Give notice before any work is covered up or made inaccessible for inspection.', role: 'Contractor', due: hours + ' hours’ notice', page: 2, sec: '§3.1', quote: 'The Contractor shall give the Client’s Representative not less than ' + hours + ' hours’ notice before any work is covered up or otherwise made inaccessible for inspection.' },
+  { id: 'ip-record-' + rv, rev: 'IP-01/' + rv, text: 'Record each inspection on form IR-1 and submit it to the Client’s Representative.', role: 'Site Engineer', due: 'Within 1 working day of the inspection', page: 3, sec: '§4.2', quote: 'The Site Engineer shall record each inspection on Inspection Record form IR-1 and submit it to the Client’s Representative within one working day.' },
+  { id: 'ip-fail-' + rv, rev: 'IP-01/' + rv, text: 'Correct work that fails inspection and offer it for re-inspection.', role: null, due: null, page: 3, sec: '§4.4', quote: 'Work that fails inspection shall be corrected and offered for re-inspection.' },
+  { id: 'ip-keep-' + rv, rev: 'IP-01/' + rv, text: 'Keep inspection records on site and make them available on request.', role: 'Contractor', due: null, page: 4, sec: '§5.1', quote: 'The Contractor shall keep all inspection records on site and make them available to the Client’s Representative on request.' }
+];
+const REQUIREMENTS = [
+  ...ipReqs('A', 48), ...ipReqs('B', 72),
+  { id: 'ssr-helmet', rev: 'SSR-01/v1', text: 'Wear a safety helmet at all times within the construction area.', role: 'All persons on site', due: null, page: 1, sec: '§2.1', quote: 'Safety helmets shall be worn at all times by all persons within the construction area.' },
+  { id: 'ssr-boots', rev: 'SSR-01/v1', text: 'Wear safety footwear with protective toecaps on site.', role: 'All persons on site', due: null, page: 1, sec: '§2.2', quote: 'Safety footwear with protective toecaps is required for all persons on site.' },
+  { id: 'ssr-induct', rev: 'SSR-01/v1', text: 'Complete the site induction before starting work.', role: 'New starters', due: 'Before first starting work on site', page: 2, sec: '§3.1', quote: 'No person shall start work on site until they have completed the site induction.' },
+  { id: 'ct-apply', rev: 'CT-01/1', text: 'Submit an interim payment application for each monthly valuation period.', role: 'Contractor', due: 'By the 25th day of each month', page: 3, sec: '§6.2', quote: 'The Contractor shall submit an interim payment application no later than the 25th day of each month.' },
+  { id: 'ct-payless', rev: 'CT-01/1', text: 'Issue any pay less notice before the final date for payment.', role: 'Client', due: 'Not later than 5 days before the final date for payment', page: 4, sec: '§6.5', quote: 'Any pay less notice shall be issued by the Client not later than 5 days before the final date for payment.' },
+  { id: 'ct-ce', rev: 'CT-01/1', text: 'Give written notice of a claimed compensation event.', role: 'Contractor', due: 'Within 8 weeks of becoming aware of the event', page: 6, sec: '§9.1', quote: 'The Contractor shall notify the Client in writing of a compensation event within 8 weeks of becoming aware of it.' }
+];
+
+const STOP = new Set('a an the and or of to in on for by is are be what which who when where how much many does do any must need needed shall should there this that with from at it its i we our my me can required'.split(' '));
+const stem = (w) => { w = w.toLowerCase().replace(/[’']s$/, '').replace(/[^a-z0-9-]/g, ''); if (w.length > 4 && w.endsWith('s')) w = w.slice(0, -1); return w; };
+const tokens = (s) => s.split(/[\s.,;:!?()“”"]+/).map(stem).filter((w) => w && !STOP.has(w));
+const SYNONYMS = { hat: ['helmet'], hardhat: ['helmet'], helmet: ['head'], boot: ['footwear'], shoe: ['footwear'], ppe: ['helmet', 'footwear'], pay: ['payment'], paid: ['payment'], warning: ['notice'], notify: ['notice'], deadline: ['notice', 'day'], hour: ['notice'], holdback: ['retention'], retain: ['retention'], visitor: ['escorted'], form: ['ir-1'] };
+
+const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+const accessible = (role) => ROLES[role].docs;
+function loadedRevisions(db) { return REVISIONS.filter((r) => r.initial || db.loaded.includes(r.key)); }
+function supersededKeys(db) { return loadedRevisions(db).filter((r) => r.supersedes).map((r) => r.supersedes); }
+function inForceKeys(db) { const s = supersededKeys(db); return loadedRevisions(db).filter((r) => !s.includes(r.key)).map((r) => r.key); }
+function supersederOf(db, key) { return loadedRevisions(db).find((r) => r.supersedes === key); }
+
+const api = {
+  listDocuments(role, db) {
+    const live = inForceKeys(db);
+    return accessible(role).map((id) => {
+      const revs = loadedRevisions(db).filter((r) => r.doc === id);
+      const cur = revs.find((r) => live.includes(r.key));
+      return { ...DOCS[id], current: cur, revisions: revs, count: REQUIREMENTS.filter((q) => q.rev === cur.key).length };
+    });
+  },
+  register(role, db) {
+    const ok = (q) => accessible(role).includes(revByKey(q.rev).doc);
+    const live = inForceKeys(db), old = supersededKeys(db);
+    const decorate = (q) => ({ ...q, revision: revByKey(q.rev), doc: DOCS[revByKey(q.rev).doc] });
+    return {
+      current: REQUIREMENTS.filter((q) => ok(q) && live.includes(q.rev)).map(decorate),
+      superseded: REQUIREMENTS.filter((q) => ok(q) && old.includes(q.rev)).map((q) => ({ ...decorate(q), supersededBy: supersederOf(db, q.rev) }))
+    };
+  },
+  document(role, db, id) {
+    if (!accessible(role).includes(id)) return null; // indistinguishable from "not found"
+    const doc = api.listDocuments(role, db).find((d) => d.id === id);
+    const reg = api.register(role, db);
+    return { ...doc, current: doc.current, currentReqs: reg.current.filter((q) => q.doc.id === id), supersededReqs: reg.superseded.filter((q) => q.doc.id === id) };
+  },
+  sourcePages(role, db, key) {
+    const r = revByKey(key);
+    if (!accessible(role).includes(r.doc) || !loadedRevisions(db).some((x) => x.key === key)) return null;
+    return PASSAGES.filter((p) => p.rev === key);
+  },
+  revisionEvents(role, db) {
+    return loadedRevisions(db).filter((r) => r.supersedes && accessible(role).includes(r.doc)).map((r) => ({ next: r, prev: revByKey(r.supersedes), doc: DOCS[r.doc], loadedAt: db.loadedAt }));
+  },
+  rank(role, db, query, { mode, history }) {
+    const scope = history ? loadedRevisions(db).map((r) => r.key) : inForceKeys(db);
+    const allowed = PASSAGES.filter((p) => accessible(role).includes(revByKey(p.rev).doc) && scope.includes(p.rev));
+    const q = tokens(query);
+    const expanded = mode === 'hybrid' ? q.flatMap((t) => [t, ...(SYNONYMS[t] || [])]) : q;
+    const scored = allowed.map((p) => {
+      const pt = new Set(tokens(p.text));
+      const direct = q.filter((t) => pt.has(t)).length;
+      const extra = mode === 'hybrid' ? expanded.filter((t) => !q.includes(t) && pt.has(t)).length * 0.5 : 0;
+      return { p, score: direct + extra, coverage: q.length ? (direct + extra) / q.length : 0 };
+    }).filter((x) => x.score > 0).sort((a, b) => b.score - a.score || a.p.page - b.p.page);
+    const excluded = history ? [] : supersededKeys(db).filter((k) => accessible(role).includes(revByKey(k).doc));
+    return { terms: q, scored, excluded, docCount: accessible(role).length };
+  },
+  async search(role, db, { query, mode, history }, sim) {
+    await delay(mode === 'hybrid' ? 900 : 650);
+    if (sim.searchError) throw new Error('The search service did not respond (simulated request error).');
+    if (mode === 'hybrid' && !sim.liveIndex) throw new Error('Hybrid unavailable: live index not built.');
+    const r = api.rank(role, db, query, { mode, history });
+    return {
+      mode, history, terms: r.terms, excluded: r.excluded, docCount: r.docCount,
+      results: r.scored.slice(0, 6).map(({ p }) => {
+        const rev = revByKey(p.rev); const by = supersederOf(db, p.rev);
+        return { ...p, file: rev.file, stated: rev.stated, stored: rev.doc + ' / ' + rev.stored, doc: DOCS[rev.doc], inForce: !by, supersession: by ? { ...by.supersession, rev: by } : null };
+      })
+    };
+  },
+  async ask(role, db, question, sim) {
+    if (!sim.chat) throw Object.assign(new Error('Live chat is unavailable.'), { kind: 'disabled' });
+    const mode = sim.liveIndex ? 'hybrid' : 'lexical';
+    await delay(1700);
+    if (sim.providerError) throw Object.assign(new Error('Model provider error: service temporarily overloaded (simulated).'), { kind: 'provider' });
+    const r = api.rank(role, db, question, { mode, history: false });
+    const toolCall = { name: 'search_documents', query: question, mode, scope: 'revisions in force, documents you can read', returned: r.scored.length };
+    const top = r.scored[0];
+    if (!top || top.coverage < 0.5) return { insufficient: true, toolCall };
+    const cited = r.scored.filter((x) => x.coverage >= 0.5 && x.score >= top.score * 0.6).slice(0, 2);
+    return {
+      insufficient: false, toolCall,
+      answer: cited.map((x) => x.p.ans),
+      sources: cited.map((x) => { const rev = revByKey(x.p.rev); return { doc: DOCS[rev.doc], page: x.p.page, sec: x.p.sec, rev, text: x.p.text }; })
+    };
+  },
+  async loadNextRevision(role, db, sim) {
+    await delay(1400);
+    if (!sim.mutations) throw new Error('Not permitted: this demo identity cannot change demo data (rejected by the mock backend).');
+    if (db.loaded.includes('IP-01/B')) throw new Error('No further revisions to load.');
+    return { loaded: ['IP-01/B'], loadedAt: new Date() };
+  },
+  async reset(role, sim) {
+    await delay(700);
+    if (!sim.mutations) throw new Error('Not permitted: this demo identity cannot reset demo data (rejected by the mock backend).');
+    return { loaded: [], loadedAt: null };
+  }
+};
+const fmtTime = (d) => d ? d.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+const PROCESSED = '8 Nov 2026, 18:42';
+
+/* ============================== Icons ============================== */
+const I = ({ d, size = 16, sw = 1.6, children }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{children}</svg>
+);
+const IconDoc = (p) => <I {...p}><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="m9 14 2 2 4-4"/></I>;
+const IconGrid = (p) => <I {...p}><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></I>;
+const IconFolder = (p) => <I {...p}><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></I>;
+const IconHistory = (p) => <I {...p}><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></I>;
+const IconSwitch = (p) => <I {...p}><path d="M7 7h12l-3-3"/><path d="M17 17H5l3 3"/></I>;
+const IconSearch = (p) => <I {...p}><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></I>;
+const IconQuote = (p) => <I {...p}><path d="M6 8h4v4c0 2-1 3.5-3 4.5"/><path d="M14 8h4v4c0 2-1 3.5-3 4.5"/></I>;
+const IconX = (p) => <I {...p}><path d="M6 6l12 12"/><path d="M18 6 6 18"/></I>;
+const IconInfo = (p) => <I {...p}><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></I>;
+const IconAlert = (p) => <I {...p}><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16h.01"/></I>;
+const IconArrow = (p) => <I {...p}><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></I>;
+const IconFile = (p) => <I {...p}><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6"/><path d="M9 17h4"/></I>;
+const IconSliders = (p) => <I {...p}><path d="M4 6h10"/><path d="M18 6h2"/><circle cx="16" cy="6" r="2"/><path d="M4 12h4"/><path d="M12 12h8"/><circle cx="10" cy="12" r="2"/><path d="M4 18h12"/><circle cx="18" cy="18" r="2"/></I>;
+const IconSpark = (p) => <I {...p}><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></I>;
+
+const IconBuilding = (p) => <I {...p}><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-5h6v5"/><path d="M9 11h.01M15 11h.01"/></I>;
+
+/* Background: slow flowing ribbons, low contrast. Periods divide 1440 so the 200%-wide SVG loops seamlessly. */
+function ribbon(base, amp, period, phase, thick, amp2, phase2) {
+  const top = [], bot = [];
+  for (let x = 0; x <= 2880; x += 24) {
+    const t = (2 * Math.PI * x) / period;
+    top.push(x + ',' + (base + amp * Math.sin(t + phase)).toFixed(1));
+    bot.push(x + ',' + (base + thick + amp2 * Math.sin(t + phase2)).toFixed(1));
+  }
+  return 'M' + top.join(' L') + ' L' + bot.reverse().join(' L') + ' Z';
+}
+function line(base, amp, period, phase) {
+  const pts = [];
+  for (let x = 0; x <= 2880; x += 24) pts.push(x + ',' + (base + amp * Math.sin((2 * Math.PI * x) / period + phase)).toFixed(1));
+  return 'M' + pts.join(' L');
+}
+const WAVES = {
+  a: ribbon(430, 90, 1440, 0, 170, 60, 0.9),
+  b: ribbon(470, 55, 720, 1.7, 160, 60, 2.6),
+  lines: [0, 0.35, 0.7, 1.05, 1.4].map((ph, i) => line(440 + i * 14, 70 - i * 6, 1440, ph))
+};
+const Waves = React.memo(function Waves() {
+  return (
+    <div className="waves" aria-hidden="true">
+      <div className="wave-layer"><svg viewBox="0 0 2880 900" preserveAspectRatio="none"><path d={WAVES.a} fill="var(--wave-band)" /></svg></div>
+      <div className="wave-layer"><svg viewBox="0 0 2880 900" preserveAspectRatio="none"><path d={WAVES.b} fill="var(--wave-band-2)" /></svg></div>
+      <div className="wave-layer"><svg viewBox="0 0 2880 900" preserveAspectRatio="none">{WAVES.lines.map((d, i) => <path key={i} d={d} fill="none" stroke="var(--wave-line)" strokeWidth="1.2" vectorEffect="non-scaling-stroke" />)}</svg></div>
+    </div>
+  );
+});
+
+/* ============================ Primitives ============================ */
+const NotStated = () => <span className="ns">Not stated</span>;
+const StatusBadge = ({ inForce }) => inForce ? <span className="badge b-ok">In force</span> : <span className="badge b-neutral">Superseded</span>;
+const SimTag = ({ children = 'Simulated' }) => <span className="badge b-warn"><IconSpark size={12} sw={2} />&nbsp;{children}</span>;
+function Highlight({ text, terms }) {
+  if (!terms || !terms.length) return text;
+  const parts = text.split(/(\s+)/);
+  return parts.map((w, i) => terms.includes(stem(w)) ? <mark key={i}>{w}</mark> : w);
+}
+
+/* ============================== Landing ============================== */
+const centredScreen = { position: 'relative', zIndex: 1, width: '100%', minHeight: '100dvh', boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBlock: 48, paddingLeft: 'max(16px, env(safe-area-inset-left, 0px))', paddingRight: 'max(16px, env(safe-area-inset-right, 0px))' };
+function Landing({ onStart }) {
+  return (
+    <div style={centredScreen}>
+      <section className="stack" style={{ width: '100%', maxWidth: 560, gap: 24, alignItems: 'center', textAlign: 'center' }}>
+        <div className="row" style={{ gap: 12, justifyContent: 'center' }}>
+          <div className="logo" style={{ width: 40, height: 40, borderRadius: 10 }}><IconDoc size={22} sw={1.8} /></div>
+          <span className="heading">Construction Document Assistant</span>
+        </div>
+        <h1 className="display">Find what each project document requires, and where it says so.</h1>
+        <p className="secondary">A prototype for one fictional project. Documents are organised into requirements — what is required, who is responsible and by when — each linked to its source quotation, page and revision.</p>
+        <div className="stack small secondary" style={{ gap: 8, alignItems: 'center' }}>
+          <div><span className="mono" style={{ color: 'var(--ink)' }}>KYD001</span> · Kestrel Yard Depot Extension (fictional)</div>
+          <div>Demo Contractor Ltd (fictional) · all documents are synthetic</div>
+        </div>
+        <button type="button" className="btn btn-primary" style={{ height: 44, paddingInline: 24 }} onClick={onStart}>Get started <IconArrow size={16} sw={1.8} /></button>
+      </section>
+    </div>
+  );
+}
+
+/* ============================== Sign-in ============================== */
+function SignIn({ onSignIn, initialRole }) {
+  const [picked, setPicked] = useState(initialRole || 'site');
+  const [pw, setPw] = useState('demo');
+  const [err, setErr] = useState('');
+  const submit = (e) => { e.preventDefault(); if (!pw.trim()) { setErr('Enter the demo password. Any value works in this local demo.'); return; } onSignIn(picked); };
+  return (
+    <div style={centredScreen}>
+      <div style={{ width: '100%', maxWidth: 480, display: 'flex' }}>
+        <form onSubmit={submit} className="stack" style={{ flex: '1 1 auto', minWidth: 0, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, boxShadow: 'var(--shadow-raised)', padding: 28, gap: 20 }}>
+          <div className="stack" style={{ gap: 4 }}>
+            <h2 className="heading">Demo sign-in</h2>
+            <p className="small muted">Choose one of two predefined demo identities.</p>
+          </div>
+          <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="stack">
+            <legend className="overline" style={{ padding: 0, marginBottom: 8 }}>Demo identity</legend>
+            <div className="stack" style={{ gap: 8 }}>
+              {Object.values(ROLES).map((r) => (
+                <label key={r.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '14px 16px', borderRadius: 12, cursor: 'pointer', border: '1px solid ' + (picked === r.id ? 'var(--accent)' : 'var(--border)'), background: picked === r.id ? 'var(--accent-soft)' : 'var(--surface)' }}>
+                  <input id={'role-' + r.id} type="radio" name="role" checked={picked === r.id} onChange={() => setPicked(r.id)} style={{ margin: '3px 0 0', width: 16, height: 16, accentColor: 'var(--accent)' }} />
+                  <span className="stack" style={{ gap: 2 }}>
+                    <span style={{ fontWeight: 550 }}>{r.name}</span>
+                    <span className="small secondary">{r.access}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <div className="stack" style={{ gap: 12 }}>
+            <label className="field" htmlFor="username">Demo username
+              <input id="username" className="input" value={ROLES[picked].user} readOnly />
+            </label>
+            <label className="field" htmlFor="password">Demo password
+              <input id="password" className="input" type="password" value={pw} onChange={(e) => { setPw(e.target.value); setErr(''); }} autoComplete="off" />
+            </label>
+            {err && <p role="alert" className="small" style={{ color: 'var(--danger)' }}>{err}</p>}
+          </div>
+          <button type="submit" className="btn btn-primary" style={{ height: 44 }}>Sign in as {ROLES[picked].name}</button>
+          <div className="notice n-neutral">
+            <IconInfo />
+            <span><strong style={{ fontWeight: 600, color: 'var(--ink)' }}>Demo sign-in, not production authentication.</strong> No real credentials are used; the password is pre-filled. Each identity’s document access is enforced by the demo’s local mock backend, not only hidden in the interface.</span>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/* ============================== Shell ============================== */
+function Sidebar({ role, screen, go, onSwitch }) {
+  const items = [['overview', 'Overview', IconGrid], ['project', 'Projects', IconFolder], ['revisions', 'Revisions', IconHistory]];
+  const activeNav = screen === 'document' ? 'project' : screen;
+  const [hovered, setHovered] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const [kbd, setKbd] = useState(false);
+  const [tip, setTip] = useState(null);
+  const timer = useRef(null);
+  const ref = useRef(null);
+  const open = hovered || pinned || kbd;
+  useEffect(() => () => clearTimeout(timer.current), []);
+  useEffect(() => {
+    if (!pinned) return;
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setPinned(false); };
+    document.addEventListener('pointerdown', h);
+    return () => document.removeEventListener('pointerdown', h);
+  }, [pinned]);
+  const onEnter = (e) => { if (e.pointerType !== 'mouse') return; clearTimeout(timer.current); timer.current = setTimeout(() => { setHovered(true); setTip(null); }, 260); };
+  const onLeave = (e) => { if (e.pointerType !== 'mouse') return; clearTimeout(timer.current); setHovered(false); setTip(null); };
+  const onFocus = (e) => { if (e.target.matches(':focus-visible')) setKbd(true); };
+  const onBlur = (e) => { if (!ref.current.contains(e.relatedTarget)) setKbd(false); };
+  const tipProps = (text) => ({
+    onPointerEnter: (e) => { if (open || e.pointerType !== 'mouse') return; const r = e.currentTarget.getBoundingClientRect(); setTip({ text, y: r.top + r.height / 2 }); },
+    onPointerLeave: () => setTip(null)
+  });
+  const nav = (id) => { setPinned(false); setTip(null); go(id); };
+  return (
+    <>
+      <aside ref={ref} className={'sidebar' + (open ? ' expanded' : '')} onPointerEnter={onEnter} onPointerLeave={onLeave} onFocus={onFocus} onBlur={onBlur}>
+        <button type="button" className="brand" aria-expanded={open} aria-label={open ? 'Collapse sidebar' : 'Expand sidebar'} onClick={() => { setPinned(!open); if (open) { setHovered(false); setKbd(false); } }} {...tipProps('Construction Document Assistant')}>
+          <span className="logo"><IconDoc size={18} sw={1.8} /></span><span className="lbl">Construction Document Assistant</span>
+        </button>
+        <nav className="nav" aria-label="Main">
+          {items.map(([id, label, Icon]) => (
+            <button key={id} type="button" aria-current={activeNav === id ? 'page' : undefined} onClick={() => nav(id)} {...tipProps(label)}><Icon size={20} /><span className="lbl">{label}</span></button>
+          ))}
+        </nav>
+        <div className="stack" style={{ gap: 8 }}>
+          <span className="overline lbl" style={{ padding: '0 10px' }}>Project</span>
+          <button type="button" className={'proj-link' + (activeNav === 'project' ? ' on' : '')} onClick={() => nav('project')} aria-label="Project KYD001 · Kestrel Yard Depot Extension (fictional)" {...tipProps('KYD001 · Kestrel Yard Depot Extension')}>
+            <IconBuilding size={20} />
+            <span className="lbl stack" style={{ gap: 2 }}>
+              <span className="mono muted" style={{ fontSize: 12, lineHeight: '16px' }}>KYD001</span>
+              <span className="small" style={{ fontWeight: 500, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis' }}>Kestrel Yard Depot Extension (fictional)</span>
+            </span>
+          </button>
+        </div>
+        <div className="identity">
+          <div className="id-row" {...tipProps(ROLES[role].name + ' · demo identity')}>
+            <span className="avatar">{ROLES[role].initials}</span>
+            <span className="lbl stack">
+              <span className="small" style={{ fontWeight: 550 }}>{ROLES[role].name}</span>
+              <span className="muted" style={{ fontSize: 12, lineHeight: '16px' }}>Demo identity</span>
+            </span>
+          </div>
+          <button type="button" className="rail-item" onClick={() => { setPinned(false); onSwitch(); }} {...tipProps('Switch identity')}><IconSwitch size={20} /><span className="lbl">Switch identity</span></button>
+        </div>
+      </aside>
+      {tip && !open && <div className="rail-tip" role="tooltip" style={{ top: tip.y }}>{tip.text}</div>}
+    </>
+  );
+}
+
+function SimulationPanel({ sim, setSim, indexing, buildIndex, onClose }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target) && !e.target.closest('[data-sim-toggle]')) onClose(); };
+    const k = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('mousedown', h); document.addEventListener('keydown', k);
+    return () => { document.removeEventListener('mousedown', h); document.removeEventListener('keydown', k); };
+  }, []);
+  const Sw = ({ k, label, hint }) => (
+    <label className="switch" htmlFor={'sim-' + k}>
+      <span className="stack" style={{ gap: 2 }}><span className="small" style={{ fontWeight: 550 }}>{label}</span><span className="muted" style={{ fontSize: 12, lineHeight: '16px' }}>{hint}</span></span>
+      <input id={'sim-' + k} type="checkbox" checked={sim[k]} onChange={(e) => setSim({ ...sim, [k]: e.target.checked })} />
+    </label>
+  );
+  return (
+    <div className="popover" ref={ref} role="dialog" aria-label="Demo simulation controls">
+      <div className="stack" style={{ gap: 2 }}>
+        <span className="overline">Demo simulation</span>
+        <span className="small secondary">Prototype controls for the local mock backend. They change no project data.</span>
+      </div>
+      <div className="stack" style={{ gap: 8, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+        <div className="row" style={{ justifyContent: 'space-between', gap: 12 }}>
+          <span className="stack" style={{ gap: 2 }}><span className="small" style={{ fontWeight: 550 }}>Live index (hybrid search)</span><span className="muted" style={{ fontSize: 12, lineHeight: '16px' }}>{sim.liveIndex ? 'Built · hybrid available' : indexing ? 'Building live index…' : 'Not built · hybrid unavailable'}</span></span>
+          {sim.liveIndex
+            ? <button type="button" className="btn btn-ghost btn-sm" onClick={() => setSim({ ...sim, liveIndex: false })}>Remove</button>
+            : <button type="button" className="btn btn-secondary btn-sm" onClick={buildIndex} disabled={indexing}>{indexing ? 'Building…' : 'Build live index'}</button>}
+        </div>
+      </div>
+      <Sw k="chat" label="Live chat available" hint="Off: Ask is disabled with an explanation." />
+      <Sw k="liveExtraction" label="Live extraction available" hint="Off: Analyse live is disabled." />
+      <Sw k="searchError" label="Simulate search request error" hint="The next searches fail." />
+      <Sw k="providerError" label="Simulate model provider error" hint="Ask and Analyse live fail." />
+      <Sw k="mutations" label="Demo actions allowed for this identity" hint="Off: the mock backend rejects load and reset." />
+    </div>
+  );
+}
+
+function TopBar({ db, revBusy, onLoad, onAskReset, sim, setSim, indexing, buildIndex }) {
+  const [open, setOpen] = useState(false);
+  const revB = db.loaded.includes('IP-01/B');
+  return (
+    <div className="floating" role="toolbar" aria-label="Demo actions">
+      <button type="button" className="btn btn-ghost btn-sm" data-sim-toggle aria-expanded={open} onClick={() => setOpen(!open)}><IconSliders size={14} sw={1.8} />Simulate</button>
+      <button type="button" className="btn btn-ghost btn-sm" onClick={onAskReset} disabled={!!revBusy}>{revBusy === 'reset' ? 'Resetting…' : 'Reset local demo'}</button>
+      <button type="button" className="btn btn-secondary btn-sm" style={{ fontWeight: 550 }} onClick={onLoad} disabled={!!revBusy || revB} title={revB ? 'Revision B is loaded; no further revisions in this demo' : undefined} aria-live="polite">{revBusy === 'load' ? 'Loading Revision B…' : 'Load next revision'}</button>
+      {open && <SimulationPanel sim={sim} setSim={setSim} indexing={indexing} buildIndex={buildIndex} onClose={() => setOpen(false)} />}
+    </div>
+  );
+}
+
+/* ============================== Overview ============================== */
+function Overview({ role, db, go }) {
+  const docs = api.listDocuments(role, db);
+  const reg = api.register(role, db);
+  const revB = db.loaded.includes('IP-01/B');
+  const steps = ['Open the project requirement register.', 'Open a requirement’s source quotation.', 'Load Revision B and inspect Revisions.', 'Reset local demo restores Revision A.'];
+  return (
+    <>
+      <div className="stack" style={{ gap: 8, maxWidth: 760 }}>
+        <span className="overline">Overview</span>
+        <h1 className="display">Project documents, organised into requirements with sources</h1>
+        <p className="secondary">Each requirement shows what is required, who is responsible and when, with the source quotation, page and revision. Missing information is displayed as “Not stated”.</p>
+      </div>
+      <div className="stack" style={{ gap: 24 }}>
+        <button type="button" onClick={() => go('project')} className="card pad stack" aria-label="Open project KYD001 requirement register" style={{ width: '100%', minWidth: 0, gap: 20, textAlign: 'left', cursor: 'pointer', font: 'inherit', color: 'var(--ink)' }}>
+          <div className="row" style={{ gap: 12, justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+            <div className="stack" style={{ gap: 4 }}>
+              <span className="mono muted">KYD001</span>
+              <span className="heading">Kestrel Yard Depot Extension (fictional)</span>
+            </div>
+            <span className="badge b-neutral">Synthetic documents</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 16, width: '100%' }}>
+            {[['Accessible documents', docs.length], ['Current requirements', reg.current.length], ['Superseded requirements', reg.superseded.length]].map(([l, v]) => (
+              <div key={l} className="well" style={{ display: 'grid', gridTemplateRows: 'auto 1fr', minHeight: 148, padding: '16px 12px', textAlign: 'center', border: '1px solid var(--border)' }}>
+                <span className="small secondary">{l}</span>
+                <span className="num" style={{ alignSelf: 'center', fontSize: 'clamp(40px, 6vw, 56px)', lineHeight: 1, fontWeight: 700, letterSpacing: '-0.03em', color: 'var(--ink)' }}>{v}</span>
+              </div>
+            ))}
+          </div>
+          <dl style={{ margin: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px 16px', width: '100%' }} className="small">
+            <div className="stack" style={{ gap: 2 }}><dt className="muted">Processed</dt><dd style={{ margin: 0 }} className="num">{PROCESSED}</dd></div>
+            <div className="stack" style={{ gap: 2 }}><dt className="muted">Revision status</dt><dd style={{ margin: 0 }}>{revB ? 'IP-01 at Revision B (loaded ' + fmtTime(db.loadedAt) + '); Revision A kept as history' : 'Initial import · all documents at first revision'}</dd></div>
+          </dl>
+          <span className="row" style={{ gap: 6, fontWeight: 550, color: 'var(--accent)' }}>Open requirement register <IconArrow size={16} sw={1.8} /></span>
+        </button>
+        <section className="card pad stack" style={{ width: '100%', boxSizing: 'border-box', minWidth: 0, gap: 16 }}>
+          <h2 className="heading">How to use this demo</h2>
+          <ol style={{ margin: 0, padding: 0, listStyle: 'none' }} className="stack">
+            {steps.map((s, i) => (
+              <li key={i} className="secondary" style={{ display: 'flex', gap: 12, marginBottom: i < 3 ? 12 : 0 }}>
+                <span style={{ width: 24, height: 24, flex: 'none', borderRadius: 999, background: 'var(--accent-soft)', color: 'var(--accent-ink)', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</span><span>{s}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      </div>
+      <div className="notice n-neutral" style={{ maxWidth: 900, border: '1px solid var(--border)' }}>
+        <IconInfo />
+        <span><strong style={{ fontWeight: 600, color: 'var(--ink)' }}>About the requirement register.</strong> It uses authored offline fixtures checked against the source documents. It is not a live extraction result or a model-quality benchmark.</span>
+      </div>
+    </>
+  );
+}
+
+/* ============================== Project ============================== */
+function DocumentsTable({ docs, openDoc }) {
+  return (
+    <section className="card" aria-labelledby="docs-h" style={{ overflow: 'hidden' }}>
+      <div className="row" style={{ justifyContent: 'space-between', gap: 8, padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+        <h2 id="docs-h" className="heading">Documents</h2>
+        <span className="small muted">{docs.length} documents you can read · all synthetic</span>
+      </div>
+      <div className="tbl-wrap">
+        <table style={{ minWidth: 720 }}>
+          <thead><tr><th scope="col">Document</th><th scope="col">Type</th><th scope="col">Current revision</th><th scope="col">Available revisions</th><th scope="col" style={{ textAlign: 'right' }}>Current requirements</th></tr></thead>
+          <tbody>
+            {docs.map((d) => (
+              <tr key={d.id} className="clickable" onClick={() => openDoc(d.id)}>
+                <td><div className="stack" style={{ gap: 2 }}><button type="button" className="link-btn" onClick={(e) => { e.stopPropagation(); openDoc(d.id); }}>{d.name}</button><span className="mono muted">{d.id}</span></div></td>
+                <td>{d.type}</td>
+                <td>{d.current.stated ? d.current.stated : <span>No revision stated <span className="muted">(stored {d.current.stored})</span></span>}</td>
+                <td>{d.revisions.map((r) => r.stored).join(', ')}</td>
+                <td className="num" style={{ textAlign: 'right', color: 'var(--ink)' }}>{d.count}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function SearchPanel({ role, db, sim, search, setSearch }) {
+  const hybridOk = sim.liveIndex;
+  const mode = hybridOk ? search.mode : 'lexical';
+  const run = async (q) => {
+    const query = (q ?? search.query).trim();
+    if (!query) { setSearch((s) => ({ ...s, status: 'idle', error: 'Enter words to search for.' })); return; }
+    const id = Date.now();
+    setSearch((s) => ({ ...s, query, status: 'loading', error: null, reqId: id }));
+    try {
+      const res = await api.search(role, db, { query, mode, history: search.history }, sim);
+      setSearch((s) => s.reqId === id ? { ...s, status: res.results.length ? 'results' : 'empty', res } : s);
+    } catch (e) { setSearch((s) => s.reqId === id ? { ...s, status: 'error', error: e.message } : s); }
+  };
+  const res = search.res;
+  return (
+    <section className="card pad stack" aria-labelledby="search-h" style={{ flex: '1 1 440px', minWidth: 0, gap: 16 }}>
+      <div className="stack" style={{ gap: 4 }}>
+        <h2 id="search-h" className="heading">Search documents</h2>
+        <p className="small muted">Returns matching source passages. It does not write an answer.</p>
+      </div>
+      <form className="row" style={{ gap: 8, flexWrap: 'nowrap' }} onSubmit={(e) => { e.preventDefault(); run(); }}>
+        <label htmlFor="search-q" className="sr">Search query</label>
+        <input id="search-q" className="input" type="search" value={search.query} placeholder="e.g. inspection notice" onChange={(e) => setSearch((s) => ({ ...s, query: e.target.value }))} />
+        <button type="submit" className="btn btn-primary" disabled={search.status === 'loading'}><IconSearch size={16} sw={1.8} />Search</button>
+      </form>
+      <div className="row" style={{ gap: 6 }}>
+        <span className="small muted">Try:</span>
+        {['inspection notice', 'safety footwear', 'hard hat', 'retention'].map((q) => <button key={q} type="button" className="chip" onClick={() => { setSearch((s) => ({ ...s, query: q })); run(q); }}>{q}</button>)}
+      </div>
+      <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="stack">
+        <legend className="overline" style={{ padding: 0, marginBottom: 8 }}>Search mode</legend>
+        <div className="seg">
+          <label className={mode === 'lexical' ? 'on' : ''} htmlFor="mode-lex">
+            <input id="mode-lex" type="radio" name="mode" checked={mode === 'lexical'} onChange={() => setSearch((s) => ({ ...s, mode: 'lexical' }))} />
+            <span className="stack" style={{ gap: 2 }}><span style={{ fontWeight: 550 }}>Lexical</span><span className="secondary" style={{ fontSize: 12, lineHeight: '16px' }}>Offline keyword search, no embeddings</span></span>
+          </label>
+          <label className={(mode === 'hybrid' ? 'on' : '') + (hybridOk ? '' : ' off')} htmlFor="mode-hyb">
+            <input id="mode-hyb" type="radio" name="mode" checked={mode === 'hybrid'} disabled={!hybridOk} onChange={() => setSearch((s) => ({ ...s, mode: 'hybrid' }))} />
+            <span className="stack" style={{ gap: 2 }}><span style={{ fontWeight: 550 }}>Hybrid</span><span className="secondary" style={{ fontSize: 12, lineHeight: '16px' }}>Vector + keyword, live query embeddings</span></span>
+          </label>
+        </div>
+        {!hybridOk && <p className="row" style={{ gap: 8, marginTop: 8, fontSize: 12, lineHeight: '16px', color: 'var(--warning)', flexWrap: 'nowrap', alignItems: 'flex-start' }}><IconAlert size={14} sw={1.8} /><span>Hybrid unavailable — backend: “Live index not built for KYD001. Run live indexing to enable vector search.” (Build it from Demo simulation.)</span></p>}
+        {hybridOk && mode === 'hybrid' && <p className="row" style={{ gap: 8, marginTop: 8, fontSize: 12, lineHeight: '16px', color: 'var(--ink-2)' }}><SimTag>Simulated embeddings</SimTag><span>Vector similarity is mocked with a local synonym list.</span></p>}
+      </fieldset>
+      <label className="checkbox" htmlFor="history">
+        <input id="history" type="checkbox" checked={search.history} onChange={(e) => setSearch((s) => ({ ...s, history: e.target.checked }))} />Include superseded revisions (history)
+      </label>
+
+      <div className="stack" style={{ borderTop: '1px solid var(--border)', paddingTop: 16, gap: 12 }} aria-live="polite">
+        {search.status === 'idle' && <p className="small muted">{search.error || 'Search covers revisions in force in the documents you can read.'}</p>}
+        {search.status === 'loading' && (
+          <div role="status" className="stack" style={{ gap: 10 }}>
+            <span className="small secondary">Searching {search.history ? 'all loaded revisions' : 'revisions in force'} ({mode})…</span>
+            <div className="skel" style={{ height: 64 }}></div><div className="skel" style={{ height: 64 }}></div>
+          </div>
+        )}
+        {search.status === 'error' && (
+          <div role="alert" className="stack" style={{ padding: 16, borderRadius: 8, background: 'var(--danger-soft)', gap: 8 }}>
+            <span style={{ fontWeight: 550, color: 'var(--danger)' }}>Search request failed</span>
+            <span className="small secondary">{search.error} Your query is kept.</span>
+            <button type="button" className="btn btn-secondary btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => run()}>Retry search</button>
+          </div>
+        )}
+        {(search.status === 'results' || search.status === 'empty') && res && (
+          <div className="stack" style={{ gap: 4 }}>
+            <div className="row" style={{ gap: '6px 12px' }}>
+              <span style={{ fontWeight: 550 }}>{res.results.length} {res.results.length === 1 ? 'passage' : 'passages'}</span>
+              <span className="badge b-accent">{res.mode === 'hybrid' ? 'Hybrid · vector + keyword' : 'Lexical · keyword, no embeddings'}</span>
+            </div>
+            <span className="muted" style={{ fontSize: 12, lineHeight: '16px' }}>Scope: {res.history ? 'in-force and superseded revisions' : 'revisions in force only'} · {res.docCount} documents you can read</span>
+            {res.excluded.length > 0 && <span className="secondary" style={{ fontSize: 12, lineHeight: '16px' }}>Excluded: {res.excluded.length} superseded revision ({res.excluded.map((k) => k.replace('/', ' Revision ')).join(', ')}). Include history to search it.</span>}
+          </div>
+        )}
+        {search.status === 'empty' && (
+          <div className="well stack" style={{ padding: 20, gap: 4 }}>
+            <span style={{ fontWeight: 550 }}>No matching passages</span>
+            <span className="small secondary">Nothing you can read matched “{search.query}”. Try other words{search.history ? '' : ', or include superseded revisions'}.</span>
+          </div>
+        )}
+        {search.status === 'results' && res && (
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0 }} className="stack">
+            {res.results.map((r, i) => (
+              <li key={r.rev + r.page + r.sec} style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px', marginTop: i ? 10 : 0 }} className="stack">
+                <p style={{ color: 'var(--ink)' }}><Highlight text={r.text} terms={res.terms} /></p>
+                <div className="row" style={{ gap: '6px 12px', marginTop: 8, fontSize: 12, lineHeight: '16px', color: 'var(--ink-2)' }}>
+                  <StatusBadge inForce={r.inForce} />
+                  <span className="mono" style={{ fontSize: 12, color: 'var(--ink)' }}>{r.file}</span>
+                  <span>p. {r.page}</span>
+                  <span>{r.stated ? 'Revision stated: ' + r.stated.replace('Revision ', '') : 'no revision stated'}</span>
+                  <span className="muted">Stored as {r.stored}</span>
+                </div>
+                {r.supersession && <blockquote className="small secondary" style={{ marginTop: 8, padding: '8px 12px', borderRadius: 6, background: 'var(--sunken)' }}>“{r.supersession.quote}” <span className="muted">— {r.supersession.rev.doc} {r.supersession.rev.stated}, p. {r.supersession.page}</span></blockquote>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function AskPanel({ role, db, sim, ask, setAsk }) {
+  const submit = async (q) => {
+    const question = (q ?? ask.question).trim();
+    if (!question) { setAsk((a) => ({ ...a, status: 'idle', hint: 'Type a question first.' })); return; }
+    const id = Date.now();
+    setAsk((a) => ({ ...a, question, status: 'waiting', reqId: id, hint: null }));
+    try {
+      const res = await api.ask(role, db, question, sim);
+      setAsk((a) => a.reqId === id ? { ...a, status: res.insufficient ? 'insufficient' : 'answer', res, asked: question } : a);
+    } catch (e) { setAsk((a) => a.reqId === id ? { ...a, status: 'error', error: e.message } : a); }
+  };
+  const disabled = !sim.chat;
+  const res = ask.res;
+  return (
+    <section className="card pad stack" aria-labelledby="ask-h" style={{ flex: '1 1 440px', minWidth: 0, gap: 16 }}>
+      <div className="row" style={{ justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
+        <div className="stack" style={{ gap: 4 }}>
+          <h2 id="ask-h" className="heading">Ask project documents</h2>
+          <p className="small muted">One question, answered from documents you can read. Each question is independent.</p>
+        </div>
+        <span className="pill" style={disabled ? null : { background: 'var(--warning-soft)', color: 'var(--warning)' }}><span className="dot"></span>{disabled ? 'Live model unavailable' : 'Model: simulated (mock)'}</span>
+      </div>
+      <form className="stack" style={{ gap: 12 }} onSubmit={(e) => { e.preventDefault(); submit(); }}>
+        <label className="field" htmlFor="question">Question
+          <textarea id="question" className="input" rows={3} value={ask.question} disabled={disabled} onChange={(e) => setAsk((a) => ({ ...a, question: e.target.value }))} placeholder="e.g. How much notice is needed before work is covered up?"></textarea>
+        </label>
+        <div className="row" style={{ gap: 6 }}>
+          <span className="small muted">Try:</span>
+          {['How much notice is needed before work is covered up for inspection?', 'What safety footwear is required?', 'What retention applies to interim payments?'].map((q) => (
+            <button key={q} type="button" className="chip" disabled={disabled} onClick={() => { setAsk((a) => ({ ...a, question: q })); submit(q); }}>{q.length > 38 ? q.slice(0, 36) + '…' : q}</button>
+          ))}
+        </div>
+        <div className="row" style={{ gap: '8px 12px' }}>
+          <button type="submit" className="btn btn-primary" disabled={disabled || ask.status === 'waiting'}>{ask.status === 'waiting' ? 'Asking…' : 'Ask'}</button>
+          <span className="muted" style={{ fontSize: 12, lineHeight: '16px', flex: '1 1 200px' }}>Searches with search_documents ({sim.liveIndex ? 'hybrid' : 'lexical'}) before answering. Access is applied by the backend; the model can’t widen it.</span>
+        </div>
+      </form>
+
+      <div className="stack" style={{ borderTop: '1px solid var(--border)', paddingTop: 16, gap: 12 }} aria-live="polite">
+        {disabled && (
+          <div className="well stack" style={{ padding: 16, gap: 4 }}>
+            <span style={{ fontWeight: 550 }}>Live answers are unavailable</span>
+            <span className="small secondary">The live model is not configured, so questions can’t be sent. Search and the requirement register still work offline. (Turn it on in Demo simulation.)</span>
+          </div>
+        )}
+        {!disabled && ask.status === 'idle' && <p className="small muted">{ask.hint || 'Answers cite the passages they come from. If the documents don’t say, the answer says so.'}</p>}
+        {!disabled && ask.status === 'waiting' && (
+          <div role="status" className="stack" style={{ gap: 10 }}>
+            <span className="small secondary">Calling search_documents, then writing a simulated answer…</span>
+            <div className="skel" style={{ height: 14, width: '92%' }}></div><div className="skel" style={{ height: 14, width: '78%' }}></div><div className="skel" style={{ height: 14, width: '54%' }}></div>
+          </div>
+        )}
+        {!disabled && ask.status === 'error' && (
+          <div role="alert" className="stack" style={{ padding: 16, borderRadius: 8, background: 'var(--danger-soft)', gap: 8 }}>
+            <span style={{ fontWeight: 550, color: 'var(--danger)' }}>The model provider returned an error</span>
+            <span className="small secondary">No answer was produced. {ask.error}</span>
+            <button type="button" className="btn btn-secondary btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => submit()}>Try again</button>
+          </div>
+        )}
+        {!disabled && (ask.status === 'answer' || ask.status === 'insufficient') && res && (
+          <div className="row" style={{ gap: 8 }}>
+            <SimTag>Simulated AI response</SimTag>
+            <span className="muted" style={{ fontSize: 12, lineHeight: '16px' }}>Composed locally from mock passages — no live model was called.</span>
+          </div>
+        )}
+        {!disabled && ask.status === 'insufficient' && res && (
+          <div className="stack" style={{ padding: 16, borderRadius: 8, background: 'var(--warning-soft)', gap: 4 }}>
+            <span style={{ fontWeight: 550, color: 'var(--warning)' }}>Not enough information</span>
+            <span style={{ color: 'var(--ink)' }}>The available documents do not contain enough information to answer this question.</span>
+            <span className="secondary" style={{ fontSize: 12, lineHeight: '16px' }}>search_documents returned {res.toolCall.returned ? 'no passage that covers the question' : 'no passages'}.</span>
+          </div>
+        )}
+        {!disabled && ask.status === 'answer' && res && (
+          <div className="stack" style={{ gap: 12 }}>
+            <span className="overline">Answer</span>
+            <p style={{ color: 'var(--ink)' }}>{res.answer.map((a, i) => <span key={i}>{a} <span className="badge b-accent" style={{ height: 18, padding: '0 5px' }}>{i + 1}</span>{i < res.answer.length - 1 ? ' ' : ''}</span>)}</p>
+            <span className="overline">Sources</span>
+            <ol style={{ margin: 0, padding: 0, listStyle: 'none' }} className="stack">
+              {res.sources.map((s, i) => (
+                <li key={i} className="well" style={{ display: 'flex', gap: 10, padding: '10px 12px', marginTop: i ? 8 : 0 }}>
+                  <span className="badge b-accent" style={{ width: 22, padding: 0, justifyContent: 'center' }}>{i + 1}</span>
+                  <span className="stack" style={{ gap: 2, minWidth: 0 }}>
+                    <span className="small" style={{ color: 'var(--ink)' }}>“{s.text}”</span>
+                    <span className="secondary" style={{ fontSize: 12, lineHeight: '16px' }}>{s.doc.name} {s.doc.id} · p. {s.page}, {s.sec} · {revName(s.rev)}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+            <span className="muted" style={{ fontSize: 12, lineHeight: '16px' }}>Tool call: search_documents(“{res.toolCall.query}”) · {res.toolCall.mode} · {res.toolCall.scope} · {res.toolCall.returned} passages</span>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function Register({ reg, openQuote, tab, setTab }) {
+  const rows = tab === 'current' ? reg.current : reg.superseded;
+  return (
+    <section className="card" aria-labelledby="reg-h" style={{ overflow: 'hidden' }}>
+      <div className="row" style={{ justifyContent: 'space-between', gap: 12, padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+        <div className="stack" style={{ gap: 2 }}>
+          <h2 id="reg-h" className="heading">Requirement register</h2>
+          <span className="small muted">Authored offline fixtures, checked against the source documents.</span>
+        </div>
+        <div className="tabs" role="tablist" aria-label="Requirement status">
+          <button type="button" role="tab" aria-selected={tab === 'current'} onClick={() => setTab('current')}>Current <span className="num">{reg.current.length}</span></button>
+          <button type="button" role="tab" aria-selected={tab === 'superseded'} onClick={() => setTab('superseded')}>Superseded history <span className="num">{reg.superseded.length}</span></button>
+        </div>
+      </div>
+      {rows.length === 0 ? (
+        <div className="stack" style={{ padding: '32px 20px', gap: 4, alignItems: 'center', textAlign: 'center' }}>
+          <span style={{ fontWeight: 550 }}>No superseded requirements</span>
+          <span className="small secondary">Requirements move here when a later revision explicitly supersedes their document.</span>
+        </div>
+      ) : (
+        <div className="tbl-wrap">
+          <table style={{ minWidth: 880 }}>
+            <thead><tr><th scope="col">Requirement</th><th scope="col">Responsible</th><th scope="col">Deadline / notice</th><th scope="col">Source</th><th scope="col" style={{ textAlign: 'right' }}>Evidence</th></tr></thead>
+            <tbody>
+              {rows.map((q) => (
+                <tr key={q.id}>
+                  <td style={{ maxWidth: 380 }}><div className="stack" style={{ gap: 6 }}><span style={{ fontWeight: 550, color: 'var(--ink)' }}>{q.text}</span><span style={{ alignSelf: 'flex-start' }}>{tab === 'current' ? <span className="badge b-ok">Current</span> : <span className="badge b-neutral">Superseded by {q.supersededBy.stated}</span>}</span></div></td>
+                  <td>{q.role || <NotStated />}</td>
+                  <td>{q.due || <NotStated />}</td>
+                  <td><div className="stack" style={{ gap: 2 }}><span style={{ color: 'var(--ink)' }}>{q.doc.id} · {revName(q.revision)}</span><span style={{ fontSize: 12, lineHeight: '16px' }}>p. {q.page}, {q.sec}</span></div></td>
+                  <td style={{ textAlign: 'right' }}><button type="button" className="btn btn-secondary btn-sm" onClick={() => openQuote(q)}><IconQuote size={14} sw={1.8} />Source quote</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function Project({ role, db, sim, go, openDoc, openQuote, search, setSearch, ask, setAsk, regTab, setRegTab }) {
+  const docs = api.listDocuments(role, db);
+  const reg = api.register(role, db);
+  return (
+    <>
+      <div className="stack" style={{ gap: 8 }}>
+        <nav aria-label="Breadcrumb" className="small muted">Projects / KYD001</nav>
+        <div className="row" style={{ gap: 12, alignItems: 'baseline' }}>
+          <span className="mono muted">KYD001</span>
+          <h1 className="display">Kestrel Yard Depot Extension (fictional)</h1>
+        </div>
+        <div className="row small secondary" style={{ gap: '8px 20px' }}>
+          <span>Processed <span className="num" style={{ color: 'var(--ink)' }}>{PROCESSED}</span></span>
+          <span>Requirement extraction: <span style={{ color: 'var(--ink)' }}>offline replay · authored fixtures, not a live run</span></span>
+          <span>Hybrid search: <span style={{ color: 'var(--ink)' }}>{sim.liveIndex ? 'available (live index built)' : 'unavailable'}</span></span>
+          <span>Live chat: <span style={{ color: 'var(--ink)' }}>{sim.chat ? 'available (simulated)' : 'unavailable'}</span></span>
+        </div>
+      </div>
+      <DocumentsTable docs={docs} openDoc={openDoc} />
+      <div className="row" style={{ gap: 24, alignItems: 'flex-start' }}>
+        <SearchPanel role={role} db={db} sim={sim} search={search} setSearch={setSearch} />
+        <AskPanel role={role} db={db} sim={sim} ask={ask} setAsk={setAsk} />
+      </div>
+      <Register reg={reg} openQuote={openQuote} tab={regTab} setTab={setRegTab} />
+    </>
+  );
+}
+
+/* ============================== Document ============================== */
+function DocumentPage({ role, db, sim, docId, go, openQuote, openSource, live, setLive }) {
+  const doc = api.document(role, db, docId);
+  if (!doc) return (
+    <div className="card pad stack" style={{ gap: 8, alignItems: 'flex-start' }}>
+      <h1 className="heading">Document not available</h1>
+      <p className="secondary">This document doesn’t exist or your demo identity can’t read it.</p>
+      <button type="button" className="btn btn-secondary btn-sm" onClick={() => go('project')}>Back to project</button>
+    </div>
+  );
+  const l = live[doc.id + '|' + doc.current.key] || { status: 'idle' };
+  const setL = (v) => setLive((s) => ({ ...s, [doc.id + '|' + doc.current.key]: v }));
+  const pages = api.sourcePages(role, db, doc.current.key).map((p) => p.page);
+  const total = Math.max(...pages);
+  const analyse = async () => {
+    for (let p = 1; p <= total; p++) { setL({ status: 'processing', page: p, total }); await delay(550); }
+    if (sim.providerError) { setL({ status: 'error' }); return; }
+    const found = api.sourcePages(role, db, doc.current.key).filter((p) => /shall|required/i.test(p.text));
+    setL({ status: 'done', found });
+  };
+  const revs = [...doc.revisions].reverse();
+  const isIn = (r) => r.key === doc.current.key;
+  const ReqList = ({ items, superseded }) => (
+    <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+      {items.map((q) => (
+        <li key={q.id} className="row" style={{ borderTop: '1px solid var(--border)', padding: '14px 0', gap: '8px 20px', alignItems: 'flex-start', color: superseded ? 'var(--ink-2)' : 'var(--ink)' }}>
+          <span className="stack" style={{ flex: '3 1 320px', minWidth: 0, gap: 6 }}>
+            <span style={{ fontWeight: superseded ? 400 : 550 }}>{q.text}</span>
+            {superseded && <span className="badge b-neutral" style={{ alignSelf: 'flex-start' }}>Superseded · {revName(q.revision)}</span>}
+          </span>
+          <span className="stack small" style={{ flex: '1 1 140px', gap: 2 }}><span className="muted">Responsible</span><span>{q.role || <NotStated />}</span></span>
+          <span className="stack small" style={{ flex: '1 1 160px', gap: 2 }}><span className="muted">Deadline / notice</span><span>{q.due || <NotStated />}</span></span>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => openQuote(q)}><IconQuote size={14} sw={1.8} />Source quote · p. {q.page}</button>
+        </li>
+      ))}
+    </ul>
+  );
+  return (
+    <>
+      <div className="stack" style={{ gap: 8 }}>
+        <nav aria-label="Breadcrumb" className="small muted"><button type="button" className="link-btn" style={{ fontSize: 13, fontWeight: 400, color: 'var(--ink-3)' }} onClick={() => go('project')}>Projects / KYD001</button> / {doc.id}</nav>
+        <div className="row" style={{ gap: 12 }}>
+          <h1 className="display">{doc.name}</h1>
+          <span className="mono secondary" style={{ padding: '2px 8px', borderRadius: 6, background: 'var(--sunken)' }}>{doc.id}</span>
+          <span className="badge b-neutral">Synthetic</span>
+        </div>
+        <dl className="row small" style={{ margin: 0, gap: '8px 28px' }}>
+          <div style={{ display: 'flex', gap: 6 }}><dt className="muted">Type</dt><dd style={{ margin: 0 }}>{doc.type}</dd></div>
+          <div style={{ display: 'flex', gap: 6 }}><dt className="muted">Current revision</dt><dd style={{ margin: 0 }}>{doc.current.stated || 'No revision stated'} {!doc.current.stated && <span className="muted">(stored {doc.current.stored})</span>}</dd></div>
+          <div style={{ display: 'flex', gap: 6 }}><dt className="muted">Current requirements</dt><dd style={{ margin: 0 }} className="num">{doc.currentReqs.length}</dd></div>
+          <div style={{ display: 'flex', gap: 6 }}><dt className="muted">Superseded</dt><dd style={{ margin: 0 }} className="num">{doc.supersededReqs.length}</dd></div>
+        </dl>
+      </div>
+
+      <div className="row" style={{ gap: 24, alignItems: 'flex-start' }}>
+        <section className="card pad stack" aria-labelledby="revs-h" style={{ flex: '3 1 480px', minWidth: 0, gap: 12 }}>
+          <h2 id="revs-h" className="heading">Revisions</h2>
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0 }} className="stack">
+            {revs.map((r, i) => (
+              <li key={r.key} className="row" style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px', gap: '10px 16px', marginTop: i ? 8 : 0 }}>
+                <span className="stack" style={{ gap: 2, flex: '1 1 260px', minWidth: 0 }}>
+                  <span className="row" style={{ gap: 8 }}><span style={{ fontWeight: 550 }}>{r.stated || 'No revision stated'}</span>{!r.stated && <span className="small muted">stored {r.stored}</span>}<StatusBadge inForce={isIn(r)} /></span>
+                  <span className="secondary" style={{ fontSize: 12, lineHeight: '16px' }}>{r.supersedes ? 'Explicitly supersedes ' + revByKey(r.supersedes).stated + ' (stated on p. ' + r.supersession.page + ') · loaded ' + fmtTime(db.loadedAt) : isIn(r) ? 'Initial import' : 'Kept as history · initial import'}</span>
+                  <span className="mono muted" style={{ fontSize: 12, lineHeight: '16px' }}>{r.file}</span>
+                </span>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={() => openSource(r.key)}><IconFile size={14} sw={1.8} />View source file</button>
+              </li>
+            ))}
+          </ul>
+          {revs.filter((r) => r.supersession).map((r) => (
+            <blockquote key={r.key} className="small secondary" style={{ padding: '10px 12px', borderRadius: 6, background: 'var(--sunken)' }}>“{r.supersession.quote}” <span className="muted">— {r.stated}, p. {r.supersession.page}</span></blockquote>
+          ))}
+        </section>
+
+        <section className="card pad stack" aria-labelledby="live-h" style={{ flex: '2 1 320px', minWidth: 0, gap: 12 }}>
+          <div className="row" style={{ justifyContent: 'space-between', gap: 8 }}><h2 id="live-h" className="heading">Analyse live</h2><SimTag /></div>
+          <p className="small secondary">Runs live extraction on {doc.current.stated || 'the current file'}. Its output is shown here separately; the requirement register stays the authored offline fixture.</p>
+          <button type="button" className="btn btn-secondary" style={{ alignSelf: 'flex-start' }} disabled={!sim.liveExtraction || l.status === 'processing'} onClick={analyse}>{l.status === 'processing' ? 'Analysing…' : l.status === 'error' ? 'Retry live analysis' : l.status === 'done' ? 'Run again' : 'Analyse live'}</button>
+          {!sim.liveExtraction && <div className="notice n-neutral"><IconInfo /><span><strong style={{ fontWeight: 600, color: 'var(--ink)' }}>Unavailable.</strong> Live extraction is not configured for this demo. (Turn it on in Demo simulation.)</span></div>}
+          {sim.liveExtraction && l.status === 'processing' && (
+            <div role="status" className="stack" style={{ gap: 6 }}>
+              <span className="small secondary">Reading page {l.page} of {l.total}…</span>
+              <div className="progress"><div style={{ width: (l.page / l.total * 100) + '%' }}></div></div>
+            </div>
+          )}
+          {sim.liveExtraction && l.status === 'error' && <div role="alert" className="notice n-danger"><IconAlert /><span><strong style={{ fontWeight: 600, color: 'var(--danger)' }}>Live extraction failed.</strong> The model provider returned an error (simulated). The register is unchanged.</span></div>}
+          {sim.liveExtraction && l.status === 'done' && (
+            <div className="stack" style={{ gap: 8 }}>
+              <span className="small" style={{ fontWeight: 550 }}>Simulated output · {l.found.length} candidate passages · not verified</span>
+              <ul style={{ margin: 0, paddingLeft: 18 }} className="small secondary">{l.found.map((p, i) => <li key={i}>p. {p.page} {p.sec}: {p.text.replace(/^[\d.]+ [^.]+\. /, '').slice(0, 90)}{p.text.length > 110 ? '…' : ''}</li>)}</ul>
+            </div>
+          )}
+        </section>
+      </div>
+
+      <section className="card pad stack" aria-labelledby="req-h" style={{ gap: 16 }}>
+        <div className="stack" style={{ gap: 2 }}>
+          <h2 id="req-h" className="heading">Requirements</h2>
+          <span className="small muted">Current · {revName(doc.current)} · from the authored offline register</span>
+        </div>
+        <ReqList items={doc.currentReqs} />
+        <div className="stack" style={{ gap: 2, paddingTop: 8 }}>
+          <h3 style={{ fontSize: 14, lineHeight: '20px', fontWeight: 600 }}>Superseded history</h3>
+          <span className="small muted">{doc.supersededReqs.length ? 'Earlier requirements kept for reference. A later revision explicitly supersedes them.' : 'None. Requirements appear here when a later revision explicitly supersedes this one.'}</span>
+        </div>
+        {doc.supersededReqs.length > 0 && <ReqList items={doc.supersededReqs} superseded />}
+      </section>
+    </>
+  );
+}
+
+/* ============================== Revisions ============================== */
+function RevisionsPage({ role, db, revBusy, onLoad, onAskReset, sim }) {
+  const events = api.revisionEvents(role, db);
+  const reg = api.register(role, db);
+  return (
+    <>
+      <div className="stack" style={{ gap: 8, maxWidth: 760 }}>
+        <span className="overline">Revisions</span>
+        <h1 className="display">What changed when a document was reissued</h1>
+        <p className="secondary">A revision replaces an earlier one only when the new document says so explicitly — not because it was loaded later. Replaced requirements stay available as superseded history. Showing revisions for documents you can read.</p>
+      </div>
+      {events.length === 0 && (
+        <section className="card stack" style={{ padding: '40px 24px', alignItems: 'center', textAlign: 'center', gap: 12 }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--sunken)', color: 'var(--ink-3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IconHistory size={22} /></div>
+          <h2 className="heading">No revisions loaded since the initial import</h2>
+          <p className="secondary" style={{ maxWidth: 520 }}>This local demo includes one predefined reissue: Inspection Procedure IP-01 Revision B. Loading it updates current requirements and the default search scope. Reset restores Revision A.</p>
+          <div className="row" style={{ gap: 8, justifyContent: 'center' }}>
+            <button type="button" className="btn btn-primary" onClick={onLoad} disabled={!!revBusy}>{revBusy === 'load' ? 'Loading Revision B…' : 'Load next revision (demo)'}</button>
+            <button type="button" className="btn btn-secondary" onClick={onAskReset} disabled={!!revBusy}>Reset local demo</button>
+          </div>
+          {!sim.mutations && <span className="muted" style={{ fontSize: 12, lineHeight: '16px' }}>Demo actions are switched off for this identity; the mock backend will reject them.</span>}
+        </section>
+      )}
+      {events.map((ev) => {
+        const history = reg.superseded.filter((q) => q.rev === ev.prev.key);
+        const current = reg.current.filter((q) => q.rev === ev.next.key);
+        const changed = history.map((h) => { const n = current.find((c) => c.text === h.text); return { h, n, diff: n && (n.due !== h.due || n.role !== h.role) }; });
+        const nChanged = changed.filter((c) => c.diff).length;
+        return (
+          <React.Fragment key={ev.next.key}>
+            <section className="card pad stack" style={{ gap: 20 }}>
+              <div className="row" style={{ justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
+                <div className="stack" style={{ gap: 6 }}>
+                  <div className="row" style={{ gap: 10 }}><h2 className="heading">{ev.doc.name}</h2><span className="mono secondary" style={{ padding: '2px 8px', borderRadius: 6, background: 'var(--sunken)' }}>{ev.doc.id}</span></div>
+                  <div className="row" style={{ gap: 10 }}>
+                    <span className="badge b-neutral" style={{ height: 24, fontSize: 14 }}>{ev.prev.stated}</span>
+                    <span style={{ color: 'var(--ink-3)', display: 'flex' }} role="img" aria-label="replaced by"><IconArrow size={16} sw={1.8} /></span>
+                    <span className="badge b-ok" style={{ height: 24, fontSize: 14 }}>{ev.next.stated} · in force</span>
+                  </div>
+                </div>
+                <span className="small muted">Loaded {fmtTime(ev.loadedAt)} · {nChanged} changed, {history.length - nChanged} unchanged</span>
+              </div>
+              <div className="stack" style={{ gap: 8 }}>
+                <span className="overline">Supersession statement</span>
+                <blockquote style={{ padding: '14px 16px', borderRadius: 8, background: 'var(--accent-soft)', color: 'var(--ink)', fontSize: 15, lineHeight: '23px' }}>“{ev.next.supersession.quote}”<span style={{ display: 'block', marginTop: 4, fontSize: 12, lineHeight: '16px', color: 'var(--accent-ink)' }}>{ev.doc.id} {ev.next.stated} · p. {ev.next.supersession.page} · Document status</span></blockquote>
+              </div>
+              {changed.filter((c) => c.diff).map(({ h, n }) => (
+                <div key={h.id} className="stack" style={{ gap: 8 }}>
+                  <span className="overline">Changed requirement · {h.text.replace(/\.$/, '').toLowerCase()}</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 }}>
+                    <div className="stack well" style={{ border: '1px solid var(--border)', padding: 16, gap: 10 }}>
+                      <div className="row" style={{ justifyContent: 'space-between', gap: 8 }}><span className="small secondary" style={{ fontWeight: 550 }}>Old · {ev.prev.stated}</span><span className="badge" style={{ background: 'var(--surface)', color: 'var(--ink-2)' }}>Superseded</span></div>
+                      <span className="metric" style={{ color: 'var(--ink-2)', textDecoration: 'line-through', textDecorationThickness: 2 }}>{h.due.replace('’ notice', '')}</span>
+                      <p className="small secondary">“{h.quote}”</p>
+                      <span className="muted" style={{ fontSize: 12, lineHeight: '16px' }}>{ev.doc.id} {ev.prev.stated} · p. {h.page}, {h.sec}</span>
+                    </div>
+                    <div className="stack" style={{ border: '1px solid var(--accent)', borderRadius: 8, padding: 16, gap: 10, background: 'var(--surface)' }}>
+                      <div className="row" style={{ justifyContent: 'space-between', gap: 8 }}><span className="small" style={{ fontWeight: 550 }}>New · {ev.next.stated}</span><span className="badge b-ok">Current</span></div>
+                      <span className="metric">{n.due.replace('’ notice', '')}</span>
+                      <p className="small">“{n.quote}”</p>
+                      <span className="secondary" style={{ fontSize: 12, lineHeight: '16px' }}>{ev.doc.id} {ev.next.stated} · p. {n.page}, {n.sec}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <div className="notice n-neutral"><span><strong style={{ fontWeight: 600, color: 'var(--ink)' }}>Effect:</strong> current requirements and default search now use {ev.next.stated}. {ev.prev.stated} passages remain searchable with “Include superseded revisions (history)”.</span></div>
+            </section>
+            <section className="card" aria-labelledby={'hist-' + ev.doc.id} style={{ overflow: 'hidden' }}>
+              <div className="stack" style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', gap: 2 }}>
+                <h2 id={'hist-' + ev.doc.id} className="heading">Superseded history · {ev.doc.id} {ev.prev.stated}</h2>
+                <span className="small muted">{history.length} requirements kept for reference. Not part of the current register.</span>
+              </div>
+              <ul style={{ listStyle: 'none', margin: 0, padding: '0 20px' }}>
+                {changed.map(({ h, n, diff }, i) => (
+                  <li key={h.id} className="row secondary" style={{ borderTop: i ? '1px solid var(--border)' : 0, padding: '12px 0', gap: '6px 20px', alignItems: 'baseline' }}>
+                    <span style={{ flex: '3 1 360px', minWidth: 0 }}>{h.text}{h.due ? ' — ' + h.due : ''}</span>
+                    <span className="small" style={{ flex: '1 1 160px' }}>{diff ? 'Changed in ' + ev.next.stored + ': ' + n.due : 'Unchanged in ' + ev.next.stored}</span>
+                    <span className="muted" style={{ fontSize: 12 }}>Rev {ev.prev.stored} · p. {h.page}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </React.Fragment>
+        );
+      })}
+    </>
+  );
+}
+
+/* ============================== Overlays ============================== */
+function useEscape(fn) { useEffect(() => { const k = (e) => { if (e.key === 'Escape') fn(); }; document.addEventListener('keydown', k); return () => document.removeEventListener('keydown', k); }, [fn]); }
+function Drawer({ title, overline, onClose, children }) {
+  useEscape(onClose);
+  const ref = useRef(null);
+  useEffect(() => { ref.current && ref.current.focus(); }, []);
+  return (
+    <div className="scrim" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-h">
+        <div className="row" style={{ justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', flexWrap: 'nowrap' }}>
+          <div className="stack" style={{ gap: 4 }}><span className="overline">{overline}</span><h2 id="drawer-h" className="heading">{title}</h2></div>
+          <button ref={ref} type="button" className="icon-btn" aria-label="Close" onClick={onClose}><IconX size={16} sw={1.8} /></button>
+        </div>
+        {children}
+      </aside>
+    </div>
+  );
+}
+function EvidenceDrawer({ q, db, onClose, openDoc }) {
+  const by = supersederOf(db, q.rev);
+  return (
+    <Drawer overline="Source evidence" title={q.text} onClose={onClose}>
+      <blockquote className="quote">“{q.quote}”</blockquote>
+      <dl className="meta">
+        <dt>Document</dt><dd>{q.doc.name} <span className="mono muted">{q.doc.id}</span></dd>
+        <dt>Page</dt><dd>p. {q.page}, {q.sec}</dd>
+        <dt>Revision</dt><dd>{q.revision.stated || <span>no revision stated <span className="muted">(stored {q.revision.stored})</span></span>}</dd>
+        <dt>Status</dt><dd>{by ? 'Superseded by ' + by.stated : 'Current'}</dd>
+        <dt>Responsible</dt><dd>{q.role || <NotStated />}</dd>
+        <dt>Deadline</dt><dd>{q.due || <NotStated />}</dd>
+      </dl>
+      {by && <blockquote className="small secondary" style={{ padding: '10px 12px', borderRadius: 6, background: 'var(--sunken)' }}>“{by.supersession.quote}” <span className="muted">— {by.stated}, p. {by.supersession.page}</span></blockquote>}
+      <div className="notice n-neutral"><IconInfo /><span>Quotation from the authored offline register, checked against the synthetic source.</span></div>
+      <button type="button" className="btn btn-secondary" style={{ alignSelf: 'flex-start' }} onClick={() => { onClose(); openDoc(q.doc.id); }}>Open document details</button>
+    </Drawer>
+  );
+}
+function SourceDrawer({ role, db, revKey, onClose }) {
+  const pages = api.sourcePages(role, db, revKey);
+  const rev = revByKey(revKey);
+  if (!pages) return <Drawer overline="Source file" title="Not available" onClose={onClose}><p className="secondary">This file doesn’t exist or your demo identity can’t read it.</p></Drawer>;
+  const byPage = {};
+  pages.forEach((p) => { (byPage[p.page] = byPage[p.page] || []).push(p); });
+  return (
+    <Drawer overline="Source file · synthetic" title={rev.file} onClose={onClose}>
+      <div className="notice n-neutral"><IconInfo /><span>Text of the synthetic PDF for {DOCS[rev.doc].name}, {revName(rev)}. No real file is downloaded in this demo.</span></div>
+      {Object.keys(byPage).map((n) => (
+        <section key={n} className="stack" style={{ gap: 8 }}>
+          <span className="overline">Page {n}</span>
+          <div className="well stack" style={{ padding: 16, gap: 10 }}>{byPage[n].map((p, i) => <p key={i} className="small" style={{ color: 'var(--ink)' }}>{p.text}</p>)}</div>
+        </section>
+      ))}
+    </Drawer>
+  );
+}
+function ConfirmReset({ onCancel, onConfirm }) {
+  useEscape(onCancel);
+  return (
+    <div className="scrim" onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel(); }}>
+      <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="reset-h">
+        <h2 id="reset-h" className="heading">Reset local demo?</h2>
+        <p className="secondary">This rebuilds the initial demo at Revision A. Any revision loaded since the initial import is removed from this local demo.</p>
+        <div className="row" style={{ justifyContent: 'flex-end', gap: 8 }}>
+          <button type="button" className="btn btn-secondary" onClick={onCancel} autoFocus>Cancel</button>
+          <button type="button" className="btn btn-primary" onClick={onConfirm}>Reset to Revision A</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================== App ============================== */
+const initialSearch = () => ({ query: 'inspection notice', mode: 'lexical', history: false, status: 'idle', res: null, error: null });
+const initialAsk = () => ({ question: 'How much notice is needed before work is covered up for inspection?', status: 'idle', res: null });
+
+function App() {
+  const [role, setRole] = useState(null);
+  const [landing, setLanding] = useState(true);
+  const [lastRole, setLastRole] = useState('site');
+  const [screen, setScreen] = useState('overview');
+  const [docId, setDocId] = useState('IP-01');
+  const [db, setDb] = useState({ loaded: [], loadedAt: null });
+  const [sim, setSim] = useState({ liveIndex: false, chat: true, liveExtraction: true, searchError: false, providerError: false, mutations: true });
+  const [indexing, setIndexing] = useState(false);
+  const [revBusy, setRevBusy] = useState(null);
+  const [revError, setRevError] = useState(null);
+  const [confirm, setConfirm] = useState(false);
+  const [quote, setQuote] = useState(null);
+  const [source, setSource] = useState(null);
+  const [search, setSearch] = useState(initialSearch);
+  const [ask, setAsk] = useState(initialAsk);
+  const [regTab, setRegTab] = useState('current');
+  const [live, setLive] = useState({});
+  const mainRef = useRef(null);
+
+  const go = (s) => { setScreen(s); setQuote(null); setSource(null); if (mainRef.current) mainRef.current.scrollTop = 0; window.scrollTo(0, 0); };
+  const openDoc = (id) => { setDocId(id); go('document'); };
+  const signIn = (r) => { setRole(r); setLastRole(r); setScreen('overview'); setSearch(initialSearch()); setAsk(initialAsk()); setLive({}); setRegTab('current'); };
+  const signOut = () => { setRole(null); setQuote(null); setSource(null); setConfirm(false); };
+  // project data changed → results computed against the old state are stale
+  const invalidate = () => { setSearch((s) => ({ ...s, status: 'idle', res: null, error: 'Revision state changed. Run the search again.' })); setAsk((a) => ({ ...a, status: 'idle', res: null })); setLive({}); };
+
+  const loadNext = async () => {
+    setRevBusy('load'); setRevError(null);
+    try { const r = await api.loadNextRevision(role, db, sim); setDb(r); invalidate(); }
+    catch (e) { setRevError(e.message); }
+    finally { setRevBusy(null); }
+  };
+  const doReset = async () => {
+    setConfirm(false); setRevBusy('reset'); setRevError(null);
+    try { const r = await api.reset(role, sim); setDb(r); invalidate(); setRegTab('current'); setSearch((s) => ({ ...s, history: false })); }
+    catch (e) { setRevError(e.message); }
+    finally { setRevBusy(null); }
+  };
+  const buildIndex = async () => { setIndexing(true); await delay(1600); setIndexing(false); setSim((s) => ({ ...s, liveIndex: true })); };
+
+  // first visit to the project runs the pre-filled search so the panel opens in a working state
+  const ranFirst = useRef(false);
+  useEffect(() => {
+    if (role && screen === 'project' && !ranFirst.current && search.status === 'idle' && !search.res) {
+      ranFirst.current = true;
+      setSearch((s) => ({ ...s, status: 'loading', reqId: 1 }));
+      api.search(role, db, { query: search.query, mode: 'lexical', history: false }, sim)
+        .then((res) => setSearch((s) => s.reqId === 1 ? { ...s, status: res.results.length ? 'results' : 'empty', res } : s))
+        .catch((e) => setSearch((s) => s.reqId === 1 ? { ...s, status: 'error', error: e.message } : s));
+    }
+  }, [role, screen]);
+  useEffect(() => { ranFirst.current = false; }, [role]);
+  useEffect(() => { document.title = role ? { overview: 'Overview', project: 'KYD001', document: docId, revisions: 'Revisions' }[screen] + ' · Construction Document Assistant' : 'Construction Document Assistant'; }, [role, screen, docId]);
+
+  if (!role) return <><Waves />{landing ? <Landing onStart={() => setLanding(false)} /> : <SignIn onSignIn={signIn} initialRole={lastRole} />}</>;
+
+  return (
+    <div className="app">
+      <Waves />
+      <Sidebar role={role} screen={screen} go={go} onSwitch={signOut} />
+      <main className="main" ref={mainRef}>
+        <div className="content">
+          {revError && (
+            <div role="alert" className="notice n-danger" style={{ alignItems: 'center' }}>
+              <IconAlert /><span style={{ flex: 1 }}><strong style={{ fontWeight: 600, color: 'var(--danger)' }}>Demo action rejected.</strong> {revError}</span>
+              <button type="button" className="icon-btn" aria-label="Dismiss" onClick={() => setRevError(null)} style={{ width: 28, height: 28, background: 'transparent' }}><IconX size={14} sw={1.8} /></button>
+            </div>
+          )}
+          {screen === 'overview' && <Overview role={role} db={db} go={go} />}
+          {screen === 'project' && <Project role={role} db={db} sim={sim} go={go} openDoc={openDoc} openQuote={setQuote} search={search} setSearch={setSearch} ask={ask} setAsk={setAsk} regTab={regTab} setRegTab={setRegTab} />}
+          {screen === 'document' && <DocumentPage role={role} db={db} sim={sim} docId={docId} go={go} openQuote={setQuote} openSource={setSource} live={live} setLive={setLive} />}
+          {screen === 'revisions' && <RevisionsPage role={role} db={db} revBusy={revBusy} onLoad={loadNext} onAskReset={() => setConfirm(true)} sim={sim} />}
+        </div>
+      </main>
+      <TopBar db={db} revBusy={revBusy} onLoad={loadNext} onAskReset={() => setConfirm(true)} sim={sim} setSim={setSim} indexing={indexing} buildIndex={buildIndex} />
+      {quote && <EvidenceDrawer q={quote} db={db} onClose={() => setQuote(null)} openDoc={openDoc} />}
+      {source && <SourceDrawer role={role} db={db} revKey={source} onClose={() => setSource(null)} />}
+      {confirm && <ConfirmReset onCancel={() => setConfirm(false)} onConfirm={doReset} />}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+
+</body></html>

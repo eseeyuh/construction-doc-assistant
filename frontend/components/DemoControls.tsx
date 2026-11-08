@@ -8,22 +8,16 @@
 // reset rebuilds the fictional project at Revision A, and "load next
 // revision" brings in Inspection Procedure Revision B through the ordinary
 // change-detection path. Neither talks to an external system, and neither
-// runs unless someone presses it. There is no sign-in yet: anyone who can
-// reach this local demo can press them. Every copy of the controls shares one
-// running action (DemoState), so nothing runs twice.
+// runs unless someone presses it; a reset is always confirmed first. Every
+// copy of the controls shares one running action (DemoState), so nothing
+// runs twice.
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
 
-import { useApi, useDemoState } from "@/components/DemoState";
+import { useDemoState } from "@/components/DemoState";
 import { Icon } from "@/components/Icon";
-import { CompactNav } from "@/components/Nav";
-import { api } from "@/lib/api";
-import { formatInstant } from "@/lib/format";
-
-// Display label only: the demo organisation, as the manifest names it.
-const ORGANISATION_LABEL = "Demo Contractor Ltd (fictional)";
 
 // What each action does on the backend, in order. A description, not a
 // progress report: the API answers once the whole action has finished.
@@ -40,42 +34,84 @@ const WORKING = {
   },
 };
 
-function Buttons({ small = false }: { small?: boolean }) {
-  const { busy, run } = useDemoState();
-  const [confirming, setConfirming] = useState(false);
-  const size = small ? "btn-sm" : "";
-  if (confirming) {
-    return (
-      <span role="group" aria-label="Confirm local demo reset" className="flex flex-wrap items-center gap-1.5">
-        <span className="text-[12.5px] text-ink-soft">Delete this demo&apos;s data and rebuild it at Rev A?</span>
-        <button type="button" className={`btn btn-ghost ${size}`} data-testid="confirm-reset"
-          onClick={() => { setConfirming(false); void run("reset"); }}>
-          Reset
-        </button>
-        <button type="button" className={`btn btn-quiet ${size}`} onClick={() => setConfirming(false)}>Cancel</button>
-      </span>
-    );
-  }
+// --- confirmation before a reset --------------------------------------------------------------
+
+const ConfirmContext = createContext<() => void>(() => {});
+
+/** Holds the reset confirmation dialog, so every Reset button asks first. */
+export function ResetConfirmProvider({ children }: { children: ReactNode }) {
+  const { run } = useDemoState();
+  const [open, setOpen] = useState(false);
+  const ask = useCallback(() => setOpen(true), []);
   return (
-    <>
-      <button type="button" className={`btn btn-ghost ${size}`} disabled={busy !== null} onClick={() => setConfirming(true)}
-        data-testid="reset-demo" title="Local demo operation: deletes and rebuilds the fictional project's data">
-        {busy === "reset" ? "Resetting…" : "Reset local demo"}
-      </button>
-      <button type="button" className={`btn btn-quiet ${size}`} disabled={busy !== null} onClick={() => run("sync")}
-        data-testid="simulate-sync" title="Local demo operation: imports Inspection Procedure Rev B">
-        <Icon name="refresh" size={14} className={`text-link ${busy === "sync" ? "motion-safe:animate-spin" : ""}`} />
-        {busy === "sync" ? "Loading…" : "Load next revision (demo)"}
-      </button>
-    </>
+    <ConfirmContext.Provider value={ask}>
+      {children}
+      {open && <ConfirmReset onCancel={() => setOpen(false)} onConfirm={() => { setOpen(false); void run("reset"); }} />}
+    </ConfirmContext.Provider>
+  );
+}
+
+function ConfirmReset({ onCancel, onConfirm }: { onCancel: () => void; onConfirm: () => void }) {
+  const cancel = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    cancel.current?.focus();
+    const onKey = (event: KeyboardEvent) => event.key === "Escape" && onCancel();
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      opener?.focus();
+    };
+  }, [onCancel]);
+  return (
+    <div className="scrim" onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel(); }}>
+      <div className="dialog" role="alertdialog" aria-modal="true" aria-labelledby="reset-heading" aria-describedby="reset-body">
+        <h2 id="reset-heading" className="section-title">Reset local demo?</h2>
+        <p id="reset-body" className="text-ink-soft">
+          This deletes the demo project&apos;s stored data and rebuilds it at Revision A by replaying the authored
+          fixtures. Any revision loaded since then is removed, and live embeddings must be indexed again for hybrid
+          search.
+        </p>
+        <div className="flex flex-wrap justify-end gap-2">
+          <button ref={cancel} type="button" className="btn btn-quiet" onClick={onCancel}>Cancel</button>
+          <button type="button" className="btn btn-primary" onClick={onConfirm} data-testid="confirm-reset">Reset to Revision A</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- the controls -------------------------------------------------------------------------------
+
+function ResetButton({ className }: { className: string }) {
+  const { busy } = useDemoState();
+  const confirm = useContext(ConfirmContext);
+  return (
+    <button type="button" className={className} disabled={busy !== null} onClick={confirm}
+      data-testid="reset-demo" title="Local demo operation: deletes and rebuilds the fictional project's data">
+      {busy === "reset" ? "Resetting…" : "Reset local demo"}
+    </button>
+  );
+}
+
+function LoadButton({ className }: { className: string }) {
+  const { busy, run } = useDemoState();
+  return (
+    <button type="button" className={className} disabled={busy !== null} onClick={() => run("sync")}
+      data-testid="simulate-sync" title="Local demo operation: imports Inspection Procedure Rev B">
+      <Icon name="refresh" size={14} className={busy === "sync" ? "motion-safe:animate-spin" : ""} />
+      {busy === "sync" ? "Loading…" : "Load next revision (demo)"}
+    </button>
   );
 }
 
 /** The status of the last demo action, kept short. */
 function Status() {
   const { busy, message } = useDemoState();
+  const visible = busy !== null || message !== null;
   return (
-    <span role="status" aria-live="polite" data-testid="demo-status" className="flex items-center gap-1.5 text-[12.5px]">
+    <span role="status" aria-live="polite" data-testid="demo-status"
+      className={`items-center gap-1.5 px-1.5 text-[12.5px] ${visible ? "flex" : "sr-only"}`}>
       {busy && <span aria-hidden className="spinner h-3 w-3" />}
       {busy === "sync" && <span className="text-muted">Loading the next revision…</span>}
       {busy === "reset" && <span className="text-muted">Resetting the local demo…</span>}
@@ -83,20 +119,13 @@ function Status() {
         <>
           <Icon name={message.tone === "error" ? "alert" : "checkCircle"} size={13}
             className={message.tone === "error" ? "text-conflict" : "text-verified"} />
-          <span className={message.tone === "error" ? "text-conflict" : "text-ink-soft"}>{message.text}</span>
+          <span className={`max-w-[18rem] truncate ${message.tone === "error" ? "text-conflict" : "text-ink-soft"}`} title={message.text}>
+            {message.text}
+          </span>
         </>
       )}
     </span>
   );
-}
-
-/** When a document revision was last loaded, from the stored changes. */
-function LastRevision() {
-  const changes = useApi(api.changes, "topbar-changes");
-  const latest = changes.data?.at(-1);
-  if (changes.data === undefined) return <span className="skeleton inline-block h-2 w-40 align-middle" aria-hidden />;
-  if (!latest) return <>No revisions loaded since import</>;
-  return <>Last revision loaded {formatInstant(latest.observed_at)}</>;
 }
 
 /** The plain label every page carries: what the stored results are. */
@@ -109,33 +138,24 @@ export function ReplayLabel() {
   );
 }
 
-/** The workspace top bar: context on the left, the demo actions on the
- * right. */
+/** The floating demo actions, top right of every signed-in screen. */
 export function TopBar() {
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-canvas/85 backdrop-blur">
-      <div className="flex min-h-16 flex-wrap items-center gap-x-6 gap-y-2 px-8 py-2.5 xl:px-12">
-        <div className="mr-auto min-w-0">
-          <p className="font-display text-[24px] leading-[1.1] tracking-tight text-ink sm:whitespace-nowrap xl:text-[28px]">{ORGANISATION_LABEL}</p>
-          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] leading-tight text-muted">
-            <ReplayLabel />
-            <LastRevision />
-          </p>
-        </div>
-        <CompactNav />
-        <div role="group" aria-label="Local demo controls" className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <Status />
-          <span className="flex flex-wrap gap-1.5"><Buttons small /></span>
-        </div>
-      </div>
+    <header className="floating" aria-label="Local demo actions">
+      <Status />
+      <ResetButton className="btn btn-ghost btn-sm" />
+      <LoadButton className="btn btn-quiet btn-sm font-[550]" />
     </header>
   );
 }
 
-/** The controls in a page body (the Revisions page). */
+/** The controls in a page body (the Revisions page's empty state). */
 export function DemoControls() {
   return (
-    <div className="flex flex-wrap items-center gap-2"><Buttons /></div>
+    <div className="flex flex-wrap justify-center gap-2">
+      <LoadButton className="btn btn-primary" />
+      <ResetButton className="btn btn-quiet" />
+    </div>
   );
 }
 
@@ -147,22 +167,22 @@ export function DemoProgress() {
   if (busy) {
     const { title, steps, duration } = WORKING[busy];
     return (
-      <div className="panel mb-9 overflow-hidden shadow-lift animate-fade-up" data-testid="demo-progress">
-        <div className="h-0.5 skeleton rounded-none" aria-hidden />
-        <div className="flex items-start gap-4 px-6 py-5">
+      <div className="panel overflow-hidden animate-fade-up" data-testid="demo-progress">
+        <div className="skeleton h-0.5 rounded-none" aria-hidden />
+        <div className="flex items-start gap-4 px-5 py-4">
           <span aria-hidden className="spinner mt-1 h-4 w-4" />
           <div className="min-w-0 flex-1">
-            <p className="text-[15px] font-semibold tracking-tight">{title}</p>
-            <ol className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[13px] text-muted">
+            <p className="font-semibold">{title}</p>
+            <ol className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[13px] text-ink-soft">
               {steps.map((step, i) => (
                 <li key={step} className="flex items-center gap-2">
-                  <span className="grid h-5 w-5 place-items-center rounded-full text-[11px] font-semibold text-faint ring-1 ring-line">{i + 1}</span>
+                  <span className="grid h-6 w-6 place-items-center rounded-full bg-accent-soft text-[12px] font-semibold text-accent-ink">{i + 1}</span>
                   {step}
-                  {i < steps.length - 1 && <Icon name="arrowRight" size={13} className="text-line-strong" />}
+                  {i < steps.length - 1 && <Icon name="arrowRight" size={13} className="text-faint" />}
                 </li>
               ))}
             </ol>
-            <p className="mt-3 text-[12px] text-faint">{duration}</p>
+            <p className="mt-3 text-[12px] text-muted">{duration}</p>
           </div>
         </div>
       </div>
@@ -171,21 +191,22 @@ export function DemoProgress() {
   if (!message) return null;
   const error = message.tone === "error";
   return (
-    <div className={`panel mb-9 flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3.5 text-[13.5px] animate-fade-up ${
-      error ? "border-conflict-line bg-conflict-soft" : "border-verified-line/70"}`}
-      data-testid="demo-outcome">
-      <Icon name={error ? "alert" : "checkCircle"} size={17} className={error ? "text-conflict" : "text-verified"} />
+    <div role={error ? "alert" : undefined} data-testid="demo-outcome"
+      className={`notice items-center animate-fade-up ${error ? "notice-danger" : "notice-neutral border border-line"}`}>
+      <Icon name={error ? "alert" : "checkCircle"} size={16} className={error ? "text-conflict" : "text-verified"} />
       <p className="min-w-0 flex-1">
-        <span className={`font-medium ${error ? "text-conflict" : "text-ink"}`}>{message.text}</span>
-        <span className="text-muted">
+        <strong className={`font-semibold ${error ? "text-conflict" : "text-ink"}`}>{message.text}</strong>
+        <span className="text-ink-soft">
           {!error && message.action === "sync" && " The requirement register now reflects the current revisions; Rev A stays as history."}
           {!error && message.action === "reset" && " Every document is back at its first revision, with no changes yet."}
         </span>
-        {message.ref && <span className="text-[12px] text-faint">{message.ref}</span>}
+        {message.ref && <span className="text-[12px] text-muted">{message.ref}</span>}
       </p>
-      <span className="flex items-center gap-4">
-        {!error && message.action === "sync" && path !== "/changes" && <Link href="/changes" className="text-link">See what changed</Link>}
-        <button type="button" onClick={dismiss} className="text-muted hover:text-ink">Dismiss</button>
+      <span className="flex items-center gap-3">
+        {!error && message.action === "sync" && path !== "/changes" && <Link href="/changes" className="text-link font-medium">See what changed</Link>}
+        <button type="button" onClick={dismiss} className="icon-btn h-7 w-7 bg-transparent" aria-label="Dismiss">
+          <Icon name="x" size={14} />
+        </button>
       </span>
     </div>
   );
