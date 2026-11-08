@@ -1,6 +1,6 @@
 # CourseFlow development guide
 
-The full local development stack. For the judge demo only, see the [README](../README.md#run-the-demo).
+The full local development stack. For the judge demo only, see the [README](../README.md#quick-start).
 
 The local stack is PostgreSQL + pgvector, a one-shot migration job and the API, all in Docker Compose. The web frontend runs on the host for fast reloads.
 
