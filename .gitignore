@@ -73,6 +73,8 @@ desktop.ini
 /docs/learning/
 # Local reference copy of the CourseFlow design prototype (not used by the build)
 /courseflow-design-reference/
+# Local copy of this project's design prototype (not used by the build)
+/design-reference/
 # Unreferenced personal image
 /frontend/public/photo_2026-06-26_22-34-01.jpg
 # Inherited CourseFlow demo material, unused by this project
