@@ -1,0 +1,81 @@
+# --- Secrets and local configuration -------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+
+# --- Python ---------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+dist/
+build/
+
+# --- Node / Next.js -------------------------------------------------------
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+.eslintcache
+npm-debug.log*
+.pnpm-debug.log*
+
+# --- Runtime data (never commit generated or uploaded content) -----------
+/data/
+/uploads/
+/storage/
+*.sqlite
+*.db
+*.dump
+*.log
+
+# --- Evaluation run outputs (curated reports are committed explicitly) ---
+/evals/runs/
+
+# --- Browser test output -------------------------------------------------
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# --- Editors and OS -------------------------------------------------------
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Local tooling and private material (not part of the project) --------
+# Claude Code local configuration
+.claude/
+# Private planning notes, handoffs and learning logs
+/docs/02_MASTER_BUILD_PLAN.md
+/docs/03_25_DAY_EXECUTION_PLAN.md
+/docs/POST_HACKATHON_ACCURACY.md
+/docs/handoffs/
+/docs/learning/
+# Local reference copy of the CourseFlow design prototype (not used by the build)
+/courseflow-design-reference/
+# Unreferenced personal image
+/frontend/public/photo_2026-06-26_22-34-01.jpg
+# Inherited CourseFlow demo material, unused by this project
+/docs/demo/
+/docs/assets/screenshots/
+/frontend/public/courseflow-logo.svg

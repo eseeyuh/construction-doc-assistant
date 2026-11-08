@@ -1,0 +1,149 @@
+# Construction Document Assistant: the whole offline local demo on one Docker host.
+#
+#     docker compose -f infra/demo/compose.yml up -d --build --wait
+#
+# db (PostgreSQL + pgvector) -> migrate (alembic upgrade head) -> api
+# (APP_ENV=demo) -> seed (builds the fictional construction project only if
+# it is not loaded yet) -> web (Next.js). The demo replays committed,
+# AUTHORED fixtures (labelled fixture:authored-construction/v1): not model
+# output, no model key, no network calls, no spend.
+# Optional: `--env-file .env` (repository root) passes the Nebius settings
+# to the api, enabling only the click-triggered live document analysis.
+#
+# Addresses are explicit. On a server, set the public URLs (see .env.example
+# in this folder): the browser loads WEB_ORIGIN and calls API_PUBLIC_URL,
+# and the API allows exactly WEB_ORIGIN (CORS). NEXT_PUBLIC_API_BASE_URL is
+# compiled into the web image, so changing API_PUBLIC_URL needs --build.
+# Sign-in is DEMO authentication only: two fixed identities, no passwords;
+# anyone who can reach the API can sign in as either. It demonstrates
+# server-side document permissions, not security. Keep BIND_ADDRESS at
+# 127.0.0.1.
+
+name: construction-doc-assistant-demo
+
+x-api-image: &api-image
+  build:
+    context: ../..
+    dockerfile: infra/demo/api.Dockerfile
+  image: construction-doc-assistant-demo-api:local
+
+x-api-environment: &api-environment
+  APP_ENV: demo
+  LOG_LEVEL: INFO
+  DATABASE_URL: postgresql+asyncpg://courseflow:${DEMO_DB_PASSWORD:-courseflow-demo-only}@db:5432/courseflow_demo
+  CORS_ALLOWED_ORIGINS: ${WEB_ORIGIN:-http://localhost:3100}
+
+services:
+  db:
+    image: pgvector/pgvector:0.8.6-pg17
+    environment:
+      POSTGRES_USER: courseflow
+      POSTGRES_PASSWORD: ${DEMO_DB_PASSWORD:-courseflow-demo-only}
+      POSTGRES_DB: courseflow_demo
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # No published port: only the API reaches the database.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U courseflow -d courseflow_demo"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  migrate:
+    <<: *api-image
+    environment: *api-environment
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+    healthcheck:
+      disable: true
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    <<: *api-image
+    environment:
+      <<: *api-environment
+      # Optional, runtime only: the live actions ("Analyse live", hybrid
+      # search with live embeddings, and `python -m
+      # app.demo.construction_search index-live --yes`) use them. Empty means
+      # unset: those actions answer 503 and say why; offline lexical search
+      # and everything else work as before.
+      NEBIUS_API_KEY: ${NEBIUS_API_KEY:-}
+      NEBIUS_BASE_URL: ${NEBIUS_BASE_URL:-}
+      MODEL_FAST: ${MODEL_FAST:-}
+      MODEL_STRONG: ${MODEL_STRONG:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-4096}
+      EMBEDDING_SPACE_VERSION: ${EMBEDDING_SPACE_VERSION:-v1}
+    volumes:
+      - rawdata:/var/lib/courseflow/raw
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${API_PORT:-8100}:8000"
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  # One-shot, on every `up`: builds the initial demo project through the
+  # API's own reset path ONLY when it is not loaded yet (a fresh volume, or
+  # one still holding the inherited university demo). An existing
+  # construction demo, including a loaded Revision B, is kept as it is:
+  # restarting the stack never silently resets it.
+  seed:
+    <<: *api-image
+    environment: *api-environment
+    restart: "no"
+    healthcheck:
+      disable: true
+    command:
+      - python
+      - -c
+      - |
+        import json, sys, urllib.request
+        base = "http://api:8000/api/v1"
+        status = json.load(urllib.request.urlopen(base + "/demo/status", timeout=30))
+        if status["project_loaded"] and not status["other_demo_data"]:
+            print("demo project already loaded: kept as it is (no reset)")
+            sys.exit(0)
+        # The demo operations need a (demo) sign-in, like every other caller.
+        sign_in = urllib.request.Request(base + "/auth/demo-sign-in",
+                                         data=b'{"identity": "commercial-manager"}',
+                                         headers={"Content-Type": "application/json"}, method="POST")
+        token = json.load(urllib.request.urlopen(sign_in, timeout=30))["token"]
+        req = urllib.request.Request(base + "/demo/workflow-runs", data=b'{"reset": true}',
+                                     headers={"Content-Type": "application/json",
+                                              "Authorization": "Bearer " + token}, method="POST")
+        result = json.load(urllib.request.urlopen(req, timeout=300))
+        print("initial demo build:", "succeeded" if result["succeeded"] else "FAILED")
+        sys.exit(0 if result["succeeded"] else 1)
+    depends_on:
+      api:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ../..
+      dockerfile: infra/demo/web.Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${API_PUBLIC_URL:-http://127.0.0.1:8100}
+    image: construction-doc-assistant-demo-web:local
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${WEB_PORT:-3100}:3000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:
+  rawdata:

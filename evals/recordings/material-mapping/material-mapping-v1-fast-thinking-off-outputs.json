@@ -1,0 +1,146 @@
+[
+  {
+    "material_sha256": "6f709762878c0c044f4f6ced221e11eea58fbac48b5be7d7d8a844c8c92a34aa",
+    "output": {
+      "candidate_ids": [
+        "C3",
+        "C4",
+        "C5",
+        "C8",
+        "C9",
+        "C10",
+        "C11",
+        "C12",
+        "C13",
+        "C14"
+      ],
+      "decision": "selected"
+    }
+  },
+  {
+    "material_sha256": "ff3130286b6c8db36808559ed925c84154a3214d2dc3d469324b1e62cb25c3ce",
+    "output": {
+      "candidate_ids": [
+        "C4",
+        "C5",
+        "C8",
+        "C9",
+        "C11",
+        "C19"
+      ],
+      "decision": "selected"
+    }
+  },
+  {
+    "material_sha256": "b056637843920909ebd99e0e581ae29764f6b0857618a989db75f8a4faa2b7b6",
+    "output": {
+      "candidate_ids": [
+        "C14",
+        "C15",
+        "C16",
+        "C17",
+        "C18",
+        "C19",
+        "C20",
+        "C21",
+        "C22",
+        "C23"
+      ],
+      "decision": "selected"
+    }
+  },
+  {
+    "material_sha256": "96fccd53497b516f126a0143e47159bc7b9c75a935dc4df3fbd3ae966c105637",
+    "output": {
+      "candidate_ids": [
+        "C1",
+        "C2",
+        "C3",
+        "C4",
+        "C5",
+        "C6",
+        "C7",
+        "C8",
+        "C9",
+        "C10"
+      ],
+      "decision": "selected"
+    }
+  },
+  {
+    "material_sha256": "df7d0faac3a0f5fd9b5691e402dffec5b47b9fa61b15c731cace43011f79f2c5",
+    "output": {
+      "candidate_ids": [
+        "C4",
+        "C5",
+        "C8",
+        "C9",
+        "C10",
+        "C11",
+        "C19"
+      ],
+      "decision": "selected"
+    }
+  },
+  {
+    "material_sha256": "48e71e57da050f5bbf1d3e7af5d0b7c411b4f1c1ced84049b5789aa2675fc943",
+    "output": {
+      "candidate_ids": [
+        "C5",
+        "C6",
+        "C7",
+        "C8"
+      ],
+      "decision": "selected"
+    }
+  },
+  {
+    "material_sha256": "1f226ef7a33d5325345c12b5406a5cad73ee63c4a478366da3e14e73f30f3887",
+    "output": {
+      "candidate_ids": [],
+      "decision": "none"
+    }
+  },
+  {
+    "material_sha256": "6564438c247db4633286d38bc38e27ca61a22a1345d64ef5a980774afe209d14",
+    "output": {
+      "candidate_ids": [],
+      "decision": "none"
+    }
+  },
+  {
+    "material_sha256": "6428404c8fea4e4d72a999e3d9c39956afb542cbabe83fbf62a19f134e5501e3",
+    "output": {
+      "candidate_ids": [
+        "C2",
+        "C4",
+        "C5",
+        "C7",
+        "C8"
+      ],
+      "decision": "selected"
+    }
+  },
+  {
+    "material_sha256": "826c8c5e8c7d63156f3ccd195ff2275e8809ee2c2a8b4d6f6d2c56832bc2202c",
+    "output": {
+      "candidate_ids": [
+        "C10",
+        "C11"
+      ],
+      "decision": "selected"
+    }
+  },
+  {
+    "material_sha256": "9d8341a314d7db7ba2884d8ed16afa552d8b228a28b904b582cbfa4f4c05b4c5",
+    "output": {
+      "candidate_ids": [
+        "C12",
+        "C13",
+        "C14",
+        "C15"
+      ],
+      "decision": "selected"
+    }
+  }
+]

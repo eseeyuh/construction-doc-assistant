@@ -1,0 +1,171 @@
+{
+  "cases": [
+    {
+      "forbidden_returned": [],
+      "id": "notice-current",
+      "rank": 1,
+      "returned": [
+        "IP-01_Inspection_Procedure_RevB.pdf p1",
+        "CT-01_Commercial_Terms.pdf p1",
+        "SSR-01_Site_Safety_Rules.pdf p1"
+      ],
+      "revisions": "current"
+    },
+    {
+      "forbidden_returned": null,
+      "id": "notice-history",
+      "rank": 2,
+      "returned": [
+        "IP-01_Inspection_Procedure_RevB.pdf p1",
+        "IP-01_Inspection_Procedure_RevA.pdf p1"
+      ],
+      "revisions": "all"
+    },
+    {
+      "forbidden_returned": [],
+      "id": "notice-current-old-figure",
+      "rank": 1,
+      "returned": [
+        "IP-01_Inspection_Procedure_RevB.pdf p1"
+      ],
+      "revisions": "current"
+    },
+    {
+      "forbidden_returned": [],
+      "id": "revision-note",
+      "rank": 1,
+      "returned": [
+        "IP-01_Inspection_Procedure_RevB.pdf p1"
+      ],
+      "revisions": "current"
+    },
+    {
+      "forbidden_returned": [],
+      "id": "covering-work",
+      "rank": 1,
+      "returned": [
+        "IP-01_Inspection_Procedure_RevB.pdf p1",
+        "SSR-01_Site_Safety_Rules.pdf p1",
+        "CT-01_Commercial_Terms.pdf p1"
+      ],
+      "revisions": "current"
+    },
+    {
+      "forbidden_returned": [],
+      "id": "inspection-record",
+      "rank": 1,
+      "returned": [
+        "IP-01_Inspection_Procedure_RevB.pdf p1",
+        "SSR-01_Site_Safety_Rules.pdf p1"
+      ],
+      "revisions": "current"
+    },
+    {
+      "forbidden_returned": null,
+      "id": "ppe",
+      "rank": 1,
+      "returned": [
+        "SSR-01_Site_Safety_Rules.pdf p1",
+        "IP-01_Inspection_Procedure_RevB.pdf p1"
+      ],
+      "revisions": "current"
+    },
+    {
+      "forbidden_returned": null,
+      "id": "ppe-paraphrase",
+      "rank": null,
+      "returned": [],
+      "revisions": "current"
+    },
+    {
+      "forbidden_returned": null,
+      "id": "hi-vis",
+      "rank": 1,
+      "returned": [
+        "SSR-01_Site_Safety_Rules.pdf p1"
+      ],
+      "revisions": "current"
+    },
+    {
+      "forbidden_returned": null,
+      "id": "visitors",
+      "rank": 1,
+      "returned": [
+        "SSR-01_Site_Safety_Rules.pdf p1",
+        "IP-01_Inspection_Procedure_RevB.pdf p1"
+      ],
+      "revisions": "current"
+    },
+    {
+      "forbidden_returned": null,
+      "id": "induction-paraphrase",
+      "rank": 1,
+      "returned": [
+        "SSR-01_Site_Safety_Rules.pdf p1"
+      ],
+      "revisions": "current"
+    },
+    {
+      "forbidden_returned": null,
+      "id": "application-1",
+      "rank": 1,
+      "returned": [
+        "CT-01_Commercial_Terms.pdf p1",
+        "IP-01_Inspection_Procedure_RevB.pdf p1",
+        "SSR-01_Site_Safety_Rules.pdf p1"
+      ],
+      "revisions": "current"
+    },
+    {
+      "forbidden_returned": null,
+      "id": "pay-period",
+      "rank": 1,
+      "returned": [
+        "CT-01_Commercial_Terms.pdf p1"
+      ],
+      "revisions": "current"
+    },
+    {
+      "forbidden_returned": null,
+      "id": "retention",
+      "rank": 1,
+      "returned": [
+        "CT-01_Commercial_Terms.pdf p1"
+      ],
+      "revisions": "current"
+    }
+  ],
+  "database_counts": {
+    "chunk_embedding_links": 0,
+    "chunks": 4,
+    "model_calls": 0
+  },
+  "dataset": {
+    "cases": 14,
+    "name": "construction-retrieval",
+    "sha256": "4a7a8c2680c33ef74c7b7e4de2abd90b881c4713ecb3315ade497c627c74d4ea",
+    "version": "v1"
+  },
+  "embedding_space": null,
+  "execution": "lexical-only (offline: PostgreSQL full-text, no embeddings, no model calls)",
+  "index_summary": null,
+  "metrics": {
+    "cases": 14,
+    "hit_at_1": 12,
+    "hit_at_10": 13,
+    "hit_at_3": 13,
+    "invariant_cases": 5,
+    "invariant_violations": 0,
+    "mrr_at_10": 0.8929
+  },
+  "mode": "lexical",
+  "ran_at": "2026-11-08T11:45:16+00:00",
+  "top_k": 10,
+  "versions": {
+    "chunker": "span-pack/v1",
+    "fusion": null,
+    "lexical": "pg-fts-english/v2",
+    "query_format": null,
+    "supersession_rules": "revision-supersession/v1"
+  }
+}

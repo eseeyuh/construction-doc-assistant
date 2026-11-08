@@ -1,0 +1,96 @@
+# CourseFlow local stack: PostgreSQL + pgvector, a one-shot migration job and
+# the API. The frontend runs on the host (`npm run dev` in frontend/) for fast
+# reloads.
+#
+# Startup order: db (healthy) -> migrate (alembic upgrade head, exits 0) -> api.
+# If the migration fails, the API is not started.
+#
+# Values come from the repository-root `.env` (copy `.env.example`). The
+# `:-` fallbacks are DEVELOPMENT-ONLY so a fresh clone starts with one
+# command; never reuse them anywhere reachable from a network.
+
+name: construction-doc-assistant
+
+# Shared by `migrate` and `api`: one image, so migrations always ship with the
+# application code they belong to.
+x-backend-environment: &backend-environment
+  APP_ENV: ${APP_ENV:-development}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  # Inside the Compose network the database host is the service name `db`.
+  DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-courseflow}:${POSTGRES_PASSWORD:-courseflow-dev-only}@db:5432/${POSTGRES_DB:-courseflow}
+  # Browser origin of the frontend dev server (runs on the host).
+  CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3100}
+
+x-backend: &backend
+  build:
+    context: ./backend
+  image: construction-doc-assistant-api:dev
+  environment: *backend-environment
+
+services:
+  db:
+    image: pgvector/pgvector:0.8.6-pg17
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-courseflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-courseflow-dev-only}
+      POSTGRES_DB: ${POSTGRES_DB:-courseflow}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      # Loopback only: host-side tests and Alembic need it; the LAN does not.
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5442}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  migrate:
+    <<: *backend
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+    # One-shot job: the image's HTTP healthcheck does not apply.
+    healthcheck:
+      disable: true
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    <<: *backend
+    environment:
+      <<: *backend-environment
+      # The one canonical raw-source store for this database: the `rawdata`
+      # volume. Ingestion runs only where it is mounted (this service and
+      # `docker compose run api ...`); the host .env leaves RAW_STORAGE_DIR
+      # empty, so host-side ingestion fails fast instead of creating a second
+      # store behind the same sha256: references.
+      RAW_STORAGE_DIR: /var/lib/courseflow/raw
+      # Embeddings for `python -m app.retrieval.cli` (this service only: the
+      # migration job never needs model access). A blank key means "not
+      # configured". The space fallbacks equal the application defaults.
+      NEBIUS_API_KEY: ${NEBIUS_API_KEY:-}
+      NEBIUS_BASE_URL: ${NEBIUS_BASE_URL:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-4096}
+      EMBEDDING_SPACE_VERSION: ${EMBEDDING_SPACE_VERSION:-v1}
+    volumes:
+      - rawdata:/var/lib/courseflow/raw
+      # Read-only synthetic demo sources and their frozen labels and embedding
+      # snapshot, for `docker compose run --rm api python -m app.demo.seed`.
+      # The image (build context backend/) contains neither.
+      - ./demo_data:/demo_data:ro
+      - ./evals:/evals:ro
+    ports:
+      - "127.0.0.1:${API_HOST_PORT:-8100}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:
+  # Original source bytes, content-addressed (sha256/<2>/<2>/<hex>).
+  rawdata:
