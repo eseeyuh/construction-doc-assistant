@@ -9,9 +9,7 @@ A prototype that turns construction project documents into source-linked require
 On a construction project, obligations are spread across procedures, safety rules and commercial terms, and those documents are reissued during the works. Acting on a superseded revision, or showing commercial terms to someone who should not see them, is a costly mistake.
 
 
-![Asking about inspection notice, opening the cited PDF page and comparing Rev A with Rev B](docs\assets\screenshots\construction-doc.gif) -->
-
-*Demo workflow: ask how much notice an inspection needs, open the cited page of the current procedure, compare Rev A with Rev B, then sign in as a site role that cannot see commercial terms.*
+![Construction Document Assistant walkthrough](docs\assets\screenshots\construction-doc.gif)
 
 ## Key capabilities
 
